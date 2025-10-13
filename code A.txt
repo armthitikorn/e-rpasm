@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+
+<html lang="th">
+<head>
+<meta charset="utf-8"/>
+<title>Roleplay Test - ประกันชีวิตและสุขภาพ</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+<link href="data:," rel="icon"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/></head>
+<body class="bg-light">
+<div class="text-center mb-4" id="userFormContainer">
+<h4 class="text-white mb-3">กรุณากรอกชื่อของคุณเพื่อเริ่มแบบทดสอบ</h4>
+<input class="form-control mb-2" id="userNameInput" placeholder="ชื่อ-นามสกุล" required="" type="text"/>
+<button class="btn btn-primary" id="startTestBtn">เริ่มแบบทดสอบ</button>
+</div>
+
+<div class="container-fluid py-5">
+<h2 class="mb-4 text-center">Roleplay Test สำหรับพนักงานขายประกัน</h2>
+<div class="mb-4" id="test-section">
+<h4 id="section-title">ส่วนที่ 1: โน้มน้าวเมื่อลูกค้าปฏิเสธต้นสาย</h4>
+<p class="lead" id="question-text"></p>
+<button class="btn btn-primary mb-2 w-100 mb-2" onclick="startRecording()">🎙️ เริ่มบันทึกเสียง</button>
+<button class="btn btn-danger mb-2 w-100 mb-2" onclick="stopRecording()">⏹️ หยุดบันทึก</button>
+<audio class="mb-2 w-100 mb-2" controls="" id="employee-response"></audio>
+<a class="btn btn-outline-success mb-3 w-100 mb-2" download="" href="#" id="download-link">⬇️ ดาวน์โหลดเสียง</a>
+<button class="btn btn-success w-100 mb-2" onclick="nextQuestion()">➡️ ข้อต่อไป</button>
+</div>
+<div class="mt-4">
+<button class="btn btn-outline-secondary me-2 w-100 mb-2" onclick="startPart('part1')">เริ่มส่วนที่ 1</button>
+<button class="btn btn-outline-secondary me-2 w-100 mb-2" onclick="startPart('part2')">เริ่มส่วนที่ 2</button>
+<button class="btn btn-outline-secondary w-100 mb-2" onclick="startPart('part3')">เริ่มส่วนที่ 3</button>
+</div>
+</div>
+<script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+    import { v4 as uuidv4 } from 'https://cdn.jsdelivr.net/npm/uuid@8.3.2/dist/esm-browser/index.js';
+
+    const supabaseUrl = 'https://wzwyotzzxycqfwercakh.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind6d3lvdHp6eHljcWZ3ZXJjYWtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcwNTg3MTMsImV4cCI6MjA3MjYzNDcxM30.lgiAf9oBUqsaWGb3u_80wuoKAODQHE_lIBxpGumhrno';
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    const questions = {
+      part1: [
+        { text: "ขอโทษครับ/ค่ะ ไม่สนใจต้นสาย" },
+        { text: "ไม่สะดวกคุยตอนนี้ครับ/ค่ะ" },
+        { text: "ไม่รับสายขายของครับ/ค่ะ" },
+        { text: "ไม่สนใจประกันครับ/ค่ะ" },
+        { text: "มีประกันอยู่แล้วครับ/ค่ะ" },
+        { text: "ไม่อยากเสียเวลา" },
+        { text: "ไม่เคยซื้อของทางโทรศัพท์" },
+        { text: "ไม่ไว้ใจการขายทางโทรศัพท์" },
+        { text: "ไม่อยากให้ข้อมูลส่วนตัว" },
+        { text: "ไม่สนใจเรื่องสุขภาพตอนนี้" },
+        { text: "ไม่สะดวกทำงานอยู่" },
+        { text: "ไม่สะดวกขับรถอยู่" },
+        { text: "ไม่สะดวกคุยช่วงเช้า" },
+        { text: "ไม่สะดวกโทรมาบ่อยมาก" },
+        { text: "ไม่สะดวก ไม่ฟัง" },
+        { text: "ประกันมีเยอะแล้ว" },
+        { text: "ใครให้เบอร์โทรมาติดต่อ" },
+        { text: "ยกเลิกบัตรเครดิตไปแล้ว" },
+        { text: "ไม่ชอบประกันชีวิต" },
+        { text: "ยกเลิกไปหมดแล้ว" },
+        { text: "มิจฉาชีพหรือป่าว" }
+      ],
+      part2: [
+        { text: "ประกันสุขภาพครอบคลุมโรคเรื้อรังหรือไม่?" },
+        { text: "ถ้าเข้าโรงพยาบาลเอกชนจะจ่ายเต็มไหม?" },
+        { text: "มีค่าห้องสูงสุดเท่าไหร่?" },
+        { text: "ต้องสำรองจ่ายก่อนหรือไม่?" },
+        { text: "มีเงื่อนไขการเคลมอะไรบ้าง?" },
+        { text: "ถ้าเป็นโรคที่มีมาก่อนจะคุ้มครองไหม?" },
+        { text: "มีระยะเวลารอคอยหรือไม่?" },
+        { text: "เบี้ยประกันปรับขึ้นทุกปีหรือไม่?" },
+        { text: "สามารถใช้ร่วมกับสิทธิ์ประกันสังคมได้ไหม?" },
+        { text: "มีวงเงินคุ้มครองสูงสุดเท่าไหร่?" },
+        { text: "ถ้าไม่ได้ใช้บริการเลย จะได้เงินคืนไหม?" },
+        { text: "มีบริการเคลมออนไลน์หรือไม่?" },
+        { text: "สามารถเลือกโรงพยาบาลเองได้ไหม?" },
+        { text: "มีคุ้มครองกรณีอุบัติเหตุหรือไม่?" },
+        { text: "ถ้าเปลี่ยนงานจะยังใช้ประกันได้ไหม?" },
+        { text: "มีคุ้มครองกรณีโรคร้ายแรงหรือไม่?" },
+        { text: "สามารถซื้อให้ครอบครัวได้ไหม?" },
+        { text: "มีบริการช่วยเหลือฉุกเฉินหรือไม่?" },
+        { text: "มีเงื่อนไขการยกเลิกกรมธรรม์อย่างไร?" },
+        { text: "สามารถจ่ายเบี้ยผ่านบัตรเครดิตได้ไหม?" },
+        { text: "ข้อมูลเยอะจัง ส่งเอกสารให้ดูก่อนได้มัย" },
+        { text: "เหมือนที่มีอยู่ เหมือนๆกันเลย" },
+        { text: "ความคุ้มครองน้อยจัง ไม่ตอบโจทย์" },
+        { text: "ค่าเบี้ยแพงจัง" },
+        { text: "ไม่อยากได้แบบนี้ อยากได้แบบอื่น" },
+        { text: "ขอปรึกษาพ่อ แม่ แฟน ดูก่อน" },
+        { text: "ช่วงนี้ค่าใช้จ่ายเยอะ" },
+        { text: "ขอคิดดูก่อน" },
+        { text: "กลัวซ้ำซ้อน เบิกเคลมไม่ได้" },
+        { text: "มีเยอะแล้ว แค่ฟังๆดูก่อน" },
+        { text: "ทำแล้วติดต่อยาก ไม่รู้จะปรึกษาใครเวลามีปัญหาในกรมธรรม์" },
+        { text: "ที่พูดมาได้จริงหรอ" },
+        { text: "ไม่มั่นใจในบริษัท ไม่ชอบซื้อผ่านโทรศัพท์" },
+        { text: "ได้กำไรน้อย ขาดทุน กว่าจะได้จุดคุ้มทุน" },
+        { text: "ซื้อไปก็ไม่ได้ใช้" },
+        { text: "เดียวๆ ต้องทำงานต่อก่อน" },
+        { text: "ฟังแล้วไม่น่าสนใจเลย" },
+        { text: "มีประกันสังคม ประกันกลุ่มบริษัทอยู่แล้ว" },
+        { text: "หักลดหย่อนภาษีเต็ม" },
+        { text: "ที่บ้านเป็นตัวแทน" },
+        { text: "ซื้อไว้หมดทุกตัวแล้ว" }
+      ],
+      part3: [
+        { text: "คิดว่าแพงเกินไปครับ/ค่ะ" },
+        { text: "ขอคิดดูก่อนครับ/ค่ะ" },
+        { text: "ต้องปรึกษาครอบครัวก่อนครับ/ค่ะ" },
+        { text: "ยังไม่พร้อมตัดสินใจครับ/ค่ะ" },
+        { text: "ไม่มั่นใจในบริษัทครับ/ค่ะ" },
+        { text: "กลัวถูกหลอกครับ/ค่ะ" },
+        { text: "มีประกันอยู่แล้วครับ/ค่ะ" },
+        { text: "ไม่เห็นความจำเป็นครับ/ค่ะ" },
+        { text: "ไม่อยากผูกมัดระยะยาวครับ/ค่ะ" },
+        { text: "ไม่มั่นใจว่าจะได้ใช้ครับ/ค่ะ" },
+        { text: "ยังๆ ยังไม่ทำนะ" },
+        { text: "ขอดูวงเงินบัตรเครดิตก่อน รอบตัดบัตรเครดิตไม่สะดวก" },
+        { text: "ต้องทำเลยหรอ" },
+        { text: "คิดดูก่อนสักวัน 2วันได้มัย" },
+        { text: "ขอเปรียบเทียบกับกรมธรรม์เก่าก่อนนะ" },
+        { text: "ยังไม่ให้คำตอบวันนี้" },
+        { text: "โยนให้คนอื่นตัดสิ้นใจแทน เช่น แฟน" },
+        { text: "รอเงินเดือนออกก่อน" }
+      ]
+    };
+
+    let currentPart = "part1";
+    let shuffledQuestions = [];
+    let currentIndex = 0;
+    let mediaRecorder;
+    let audioChunks = [];
+
+    function shuffle(array) {
+      let shuffled = [...array];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      return shuffled;
+    }
+
+    window.startPart = function(partName) {
+      currentPart = partName;
+      shuffledQuestions = shuffle(questions[partName]);
+      currentIndex = 0;
+      loadQuestion();
+    }
+
+    function getSectionTitle(part) {
+      switch (part) {
+        case "part1": return "ส่วนที่ 1: โน้มน้าวเมื่อลูกค้าปฏิเสธต้นสาย";
+        case "part2": return "ส่วนที่ 2: ตอบคำถามแก้ไขความกังวลเรื่องความคุ้มครอง";
+        case "part3": return "ส่วนที่ 3: โน้มน้าวหลังปิดการขาย";
+        default: return "";
+      }
+    }
+
+    function loadQuestion() {
+      const q = shuffledQuestions[currentIndex];
+      document.getElementById("section-title").textContent = getSectionTitle(currentPart);
+      document.getElementById("question-text").textContent = q.text;
+      document.getElementById("employee-response").src = "";
+      document.getElementById("download-link").href = "#";
+    }
+
+    window.nextQuestion = function() {
+      currentIndex++;
+      if (currentIndex < shuffledQuestions.length) {
+        loadQuestion();
+      } else {
+        alert("จบคำถามในส่วนนี้แล้ว กรุณาเลือกส่วนถัดไป");
+      }
+    }
+
+    window.startRecording = async function() {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorder = new MediaRecorder(stream);
+      mediaRecorder.start();
+      audioChunks = [];
+
+      mediaRecorder.ondataavailable = event => {
+        audioChunks.push(event.data);
+      };
+
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+        const audioUrl = URL.createObjectURL(audioBlob);
+        document.getElementById("employee-response").src = audioUrl;
+        document.getElementById("download-link").href = audioUrl;
+
+        const filename = `response_${uuidv4()}.webm`;
+        const { error } = await supabase.storage
+          .from('responses')
+          .upload(filename, audioBlob, {
+            contentType: 'audio/webm',
+            upsert: true
+          });
+
+        if (error) {
+          console.error("Upload failed:", error.message);
+          alert("เกิดข้อผิดพลาดในการอัปโหลดเสียง");
+        } else {
+          console.log("Upload success:", filename);
+        }
+      };
+    }
+
+    window.stopRecording = function() {
+      if (mediaRecorder && mediaRecorder.state !== "inactive") {
+        mediaRecorder.stop();
+      }
+    }
+
+    window.startPart("part1");
+  </script>
+<div id="testContainer" style="display:none;"></div>
+<div class="text-center mt-4">
+<a class="btn btn-outline-light" download="answers.txt" id="downloadTextBtn" style="display:none;">ดาวน์โหลดคำตอบ (.txt)</a>
+</div>
+<script>
+let userName = "";
+let answers = [];
+let currentQuestionIndex = 0;
+let questions = [];
+let audioBlob = null;
+
+const part1 = [
+  { text: "ขอโทษครับ/ค่ะ ไม่สนใจต้นสาย" },
+  { text: "ไม่สะดวกคุยตอนนี้ครับ/ค่ะ" },
+  { text: "ไม่รับสายขายของครับ/ค่ะ" },
+  { text: "ไม่สนใจประกันครับ/ค่ะ" },
+  { text: "มีประกันอยู่แล้วครับ/ค่ะ" },
+  { text: "ไม่อยากเสียเวลา" },
+  { text: "ไม่เคยซื้อของทางโทรศัพท์" },
+  { text: "ไม่ไว้ใจการขายทางโทรศัพท์" },
+  { text: "ไม่อยากให้ข้อมูลส่วนตัว" },
+  { text: "ไม่สนใจเรื่องสุขภาพตอนนี้" },
+  { text: "ไม่สะดวกทำงานอยู่" },
+  { text: "ไม่สะดวกขับรถอยู่" },
+  { text: "ไม่สะดวกคุยช่วงเช้า" },
+  { text: "ไม่สะดวกโทรมาบ่อยมาก" },
+  { text: "ไม่สะดวก ไม่ฟัง" },
+  { text: "ประกันมีเยอะแล้ว" },
+  { text: "ใครให้เบอร์โทรมาติดต่อ" },
+  { text: "ยกเลิกบัตรเครดิตไปแล้ว" },
+  { text: "ไม่ชอบประกันชีวิต" },
+  { text: "ยกเลิกไปหมดแล้ว" },
+  { text: "มิจฉาชีพหรือป่าว" }
+];
+
+function shuffle(array) {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1)];
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+  return array;
+}
+
+function startTest() {
+  userName = document.getElementById("userNameInput").value.trim();
+  if (!userName) {
+    alert("กรุณากรอกชื่อก่อนเริ่มแบบทดสอบ");
+    return;
+  }
+  document.getElementById("userFormContainer").style.display = "none";
+  document.getElementById("testContainer").style.display = "block";
+  questions = shuffle(part1).slice(0, 10);
+  currentQuestionIndex = 0;
+  answers = [];
+  showQuestion();
+}
+
+function showQuestion() {
+  const container = document.getElementById("testContainer");
+  container.innerHTML = `
+    <div class="card text-white bg-dark p-4 animate__animated animate__fadeIn">
+      <h5 class="mb-3">คำถามข้อที่ ${currentQuestionIndex + 1} / ${questions.length}</h5>
+      <p class="lead">${questions[currentQuestionIndex].text}</p>
+      <div class="d-flex justify-content-between mt-3">
+        <button class="btn btn-secondary" onclick="prevQuestion()" ${currentQuestionIndex === 0 ? 'disabled' : ''}>ย้อนกลับ</button>
+        <button class="btn btn-primary" onclick="nextQuestion()">ถัดไป</button>
+      </div>
+      <div class="mt-4">
+        <button id="startRecord" class="btn btn-danger me-2">🎙 เริ่มบันทึกเสียง</button>
+        <button id="stopRecord" class="btn btn-warning me-2" disabled>⏹ หยุดบันทึก</button>
+        <a id="downloadAudio" class="btn btn-success me-2" style="display:none;">⬇ ดาวน์โหลดเสียง</a>
+        <audio id="audioPreview" controls style="display:none;"></audio>
+      </div>
+    </div>
+  `;
+  setupRecording();
+}
+
+function prevQuestion() {
+  if (currentQuestionIndex > 0) {
+    currentQuestionIndex--;
+    showQuestion();
+  }
+}
+
+function nextQuestion() {
+  if (currentQuestionIndex < questions.length - 1) {
+    currentQuestionIndex++;
+    showQuestion();
+  } else {
+    saveResults();
+  }
+}
+
+function saveResults() {
+  const timestamp = new Date().toISOString();
+  const audioUrl = document.getElementById("downloadAudio").href || "";
+  const answerText = questions.map((q, i) => `${i + 1}. ${q.text}`).join("\n");
+  const blob = new Blob([answerText], { type: "text/plain" });
+  const textUrl = URL.createObjectURL(blob);
+  const textLink = document.getElementById("downloadTextBtn");
+  textLink.href = textUrl;
+  textLink.style.display = "inline-block";
+
+  const record = {
+    name: userName,
+    total: questions.length,
+    audio: audioUrl,
+    text: textUrl,
+    time: timestamp
+  };
+
+  const records = JSON.parse(localStorage.getItem("testRecords") || "[]");
+  records.push(record);
+  localStorage.setItem("testRecords", JSON.stringify(records));
+  alert("บันทึกข้อมูลเรียบร้อยแล้ว");
+}
+
+function setupRecording() {
+  let mediaRecorder;
+  let recordedChunks = [];
+  const startBtn = document.getElementById("startRecord");
+  const stopBtn = document.getElementById("stopRecord");
+  const downloadBtn = document.getElementById("downloadAudio");
+  const audioPreview = document.getElementById("audioPreview");
+
+  startBtn.onclick = async () => {
+    recordedChunks = [];
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    mediaRecorder = new MediaRecorder(stream);
+    mediaRecorder.ondataavailable = e => {
+      if (e.data.size > 0) recordedChunks.push(e.data);
+    };
+    mediaRecorder.onstop = () => {
+      const blob = new Blob(recordedChunks, { type: "audio/webm" });
+      const url = URL.createObjectURL(blob);
+      downloadBtn.href = url;
+      downloadBtn.download = "recorded_audio.webm";
+      downloadBtn.style.display = "inline-block";
+      audioPreview.src = url;
+      audioPreview.style.display = "block";
+    };
+    mediaRecorder.start();
+    startBtn.disabled = true;
+    stopBtn.disabled = false;
+  };
+
+  stopBtn.onclick = () => {
+    mediaRecorder.stop();
+    startBtn.disabled = false;
+    stopBtn.disabled = true;
+  };
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  document.getElementById("startTestBtn").addEventListener("click", startTest);
+});
+</script>
+<script type="module">
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+import { v4 as uuidv4 } from 'https://cdn.jsdelivr.net/npm/uuid@8.3.2/dist/esm-browser/index.js';
+
+// Supabase Configuration
+const supabaseUrl = 'https://wzwyotzzxycqfwercakh.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind6d3lvdHp6eHljcWZ3ZXJjYWtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcwNTg3MTMsImV4cCI6MjA3MjYzNDcxM30.lgiAf9oBUqsaWGb3u_80wuoKAODQHE_lIBxpGumhrno';
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+// Global variables
+let audioBlobs = {};
+let mediaRecorder;
+let audioStream;
+let currentUser = '';
+let currentPartIndex = 1;
+let questions = [
+    "ทำไมลูกค้าถึงควรซื้อประกันสุขภาพ?",
+    "หากลูกค้าปฏิเสธ คุณจะตอบกลับอย่างไร?",
+    "คุณจะอธิบายความคุ้มครองอย่างไรให้เข้าใจง่าย?",
+    "คุณจะโน้มน้าวลูกค้าที่ลังเลได้อย่างไร?",
+    "คุณจะตอบคำถามเรื่องเบี้ยประกันอย่างไร?"
+];
+
+// DOM elements
+const toast = document.createElement('div');
+toast.style.position = 'fixed';
+toast.style.bottom = '20px';
+toast.style.right = '20px';
+toast.style.padding = '10px 20px';
+toast.style.backgroundColor = '#4CAF50';
+toast.style.color = 'white';
+toast.style.borderRadius = '5px';
+toast.style.display = 'none';
+document.body.appendChild(toast);
+
+function showToast(message) {
+    toast.textContent = message;
+    toast.style.display = 'block';
+    setTimeout(() => { toast.style.display = 'none'; }, 3000);
+}
+
+// Randomize question
+function getRandomQuestion() {
+    return questions[Math.floor(Math.random() * questions.length)];
+}
+
+// Start recording
+async function startRecording() {
+    audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    mediaRecorder = new MediaRecorder(audioStream);
+    let chunks = [];
+    mediaRecorder.ondataavailable = e => chunks.push(e.data);
+    mediaRecorder.onstop = () => {
+        const blob = new Blob(chunks, { type: 'audio/webm' });
+        audioBlobs[currentPartIndex] = blob;
+        showToast('บันทึกเสียงสำเร็จ');
+    };
+    mediaRecorder.start();
+}
+
+// Stop recording
+function stopRecording() {
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
+        audioStream.getTracks().forEach(track => track.stop());
+    }
+}
+
+// Upload audio to Supabase
+async function uploadAudio(partIndex) {
+    const blob = audioBlobs[partIndex];
+    const filename = `${currentUser}_part${partIndex}_${uuidv4()}.webm`;
+    const { data, error } = await supabase.storage.from('test-audio').upload(filename, blob, { upsert: true });
+    if (error) {
+        console.error('Upload error:', error);
+        return null;
+    }
+    const { data: urlData } = await supabase.storage.from('test-audio').getPublicUrl(filename);
+    return urlData.publicUrl;
+}
+
+// Upload answer file to Supabase
+async function uploadAnswerFile(textContent) {
+    const blob = new Blob([textContent], { type: 'text/plain' });
+    const filename = `${currentUser}_answers_${uuidv4()}.txt`;
+    const { data, error } = await supabase.storage.from('test-answers').upload(filename, blob, { upsert: true });
+    if (error) {
+        console.error('Upload error:', error);
+        return null;
+    }
+    const { data: urlData } = await supabase.storage.from('test-answers').getPublicUrl(filename);
+    return urlData.publicUrl;
+}
+
+// Save result to Supabase table
+async function saveTestResult(audioUrl, answerUrl) {
+    const { error } = await supabase.from('test_results').insert([{
+        name: currentUser,
+        total_parts: Object.keys(audioBlobs).length,
+        audio_url: audioUrl,
+        answer_url: answerUrl,
+        timestamp: new Date().toISOString()
+    }]);
+    if (!error) showToast('บันทึกผลการทดสอบสำเร็จ');
+}
+
+// Example usage
+document.addEventListener('DOMContentLoaded', () => {
+    const startBtn = document.getElementById('start-btn');
+    const stopBtn = document.getElementById('stop-btn');
+    const uploadBtn = document.getElementById('upload-btn');
+    const nameInput = document.getElementById('name-input');
+    const questionBox = document.getElementById('question-box');
+    const answerInput = document.getElementById('answer-input');
+
+    startBtn.onclick = () => {
+        currentUser = nameInput.value || 'anonymous';
+        questionBox.textContent = getRandomQuestion();
+        startRecording();
+    };
+
+    stopBtn.onclick = () => {
+        stopRecording();
+    };
+
+    uploadBtn.onclick = async () => {
+        const audioUrl = await uploadAudio(currentPartIndex);
+        const answerUrl = await uploadAnswerFile(answerInput.value);
+        await saveTestResult(audioUrl, answerUrl);
+    };
+});
+</script>
+
+</body>
+</html>
