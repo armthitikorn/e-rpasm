@@ -2,121 +2,92 @@
 <html lang="th">
 <head>
     <meta charset="utf-8"/>
-    <title>Roleplay Test - ระบบ Supabase Auth</title>
+    <title>Supervisor Dashboard - รายงานไฟล์เสียงพนักงาน</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
-    <link href="data:," rel="icon"/>
     <meta content="width=device-width, initial-scale=1" name="viewport"/>
     <style>
-        .auth-card {
-            max-width: 400px;
-        }
+        .auth-card { max-width: 400px; }
+        .table-responsive { max-height: 80vh; overflow-y: auto; }
     </style>
 </head>
 <body class="bg-light">
 
 <div class="container py-4">
     <div class="card p-4 mx-auto auth-card shadow-lg">
-        <h4 class="card-title text-center mb-3" id="auth-header">เข้าสู่ระบบ / ลงทะเบียน</h4>
+        <h4 class="card-title text-center mb-3" id="auth-header">เข้าสู่ระบบ (สำหรับหัวหน้างาน)</h4>
         <div id="auth-controls">
-            <input class="form-control mb-2" id="emailInput" placeholder="อีเมล" type="email" required/>
+            <input class="form-control mb-2" id="emailInput" placeholder="อีเมลหัวหน้างาน" type="email" required/>
             <input class="form-control mb-3" id="passwordInput" placeholder="รหัสผ่าน" type="password" required/>
-            <button class="btn btn-primary w-100 mb-2" id="signInBtn">เข้าสู่ระบบ (Login)</button>
-            <button class="btn btn-outline-secondary w-100" id="signUpBtn">ลงทะเบียน (Sign Up)</button>
+            <button class="btn btn-primary w-100 mb-2" id="signInBtn">เข้าสู่ระบบ</button>
         </div>
-        <button class="btn btn-danger w-100 mt-4" id="signOutBtn" style="display:none;">ออกจากระบบ (Sign Out)</button>
+        <button class="btn btn-danger w-100 mt-4" id="signOutBtn" style="display:none;">ออกจากระบบ</button>
     </div>
 </div>
-<div class="container-fluid py-5">
-    <h2 class="mb-4 text-center">Roleplay Test สำหรับพนักงานขายประกัน</h2>
-
-    <div class="mb-4" id="test-section" style="display:none;">
-        <h4 id="section-title">ส่วนที่ 1: โน้มน้าวเมื่อลูกค้าปฏิเสธต้นสาย</h4>
-        <p class="lead" id="question-text"></p>
-        <button class="btn btn-primary mb-2 w-100 mb-2" onclick="startRecording()">🎙️ เริ่มบันทึกเสียง</button>
-        <button class="btn btn-danger mb-2 w-100 mb-2" onclick="stopRecording()">⏹️ หยุดบันทึก</button>
-        <audio class="mb-2 w-100 mb-2" controls="" id="employee-response"></audio>
-        <a class="btn btn-outline-success mb-3 w-100 mb-2" download="" href="#" id="download-link">⬇️ ดาวน์โหลดเสียง</a>
-        <button class="btn btn-success w-100 mb-2" onclick="nextQuestion()">➡️ ข้อต่อไป</button>
-
-        <div class="mt-4">
-            <button class="btn btn-outline-secondary me-2 w-100 mb-2" onclick="startPart('part1')">เริ่มส่วนที่ 1</button>
-            <button class="btn btn-outline-secondary me-2 w-100 mb-2" onclick="startPart('part2')">เริ่มส่วนที่ 2</button>
-            <button class="btn btn-outline-secondary w-100 mb-2" onclick="startPart('part3')">เริ่มส่วนที่ 3</button>
-        </div>
-    </div>
+<div class="container-fluid py-5" id="dashboard-section" style="display:none;">
+    <h2 class="text-center mb-4">รายงานไฟล์เสียงทั้งหมด</h2>
     
-    <div class="mt-5 pt-5 border-top">
-        <h2 class="text-center mb-4">รายงานผลไฟล์เสียงของคุณ</h2>
-        <div id="audio-list-container" class="row justify-content-center">
-            </div>
-        <p class="text-center mt-3 text-secondary" id="dashboard-message">... กรุณาเข้าสู่ระบบเพื่อดูรายงานผล ...</p>
-    </div>
+    <div class="mb-3 d-flex justify-content-center">
+        <input type="date" class="form-control me-2" id="dateFilter" style="max-width: 200px;">
+        <button class="btn btn-info" id="filterBtn">กรองตามวันที่</button>
     </div>
 
+    <div class="table-responsive shadow-sm">
+        <table class="table table-striped table-hover align-middle" id="audio-dashboard-table">
+            <thead class="sticky-top bg-white shadow-sm">
+                <tr>
+                    <th scope="col">วันที่บันทึก</th>
+                    <th scope="col">User ID / พนักงาน</th>
+                    <th scope="col">ข้อคำถาม</th>
+                    <th scope="col">ลิงก์ไฟล์เสียง (Public URL)</th>
+                    <th scope="col">เล่นไฟล์</th>
+                    <th scope="col">ดาวน์โหลด</th>
+                </tr>
+            </thead>
+            <tbody id="dashboard-tbody">
+                </tbody>
+        </table>
+        <p class="text-center mt-3 text-secondary" id="dashboard-message">...</p>
+    </div>
+</div>
 <script type="module">
     import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
-    // ✅ แก้ไข CDN จาก jsdelivr เป็น unpkg แล้ว
-    import { v4 as uuidv4 } from 'https://unpkg.com/uuid@8.3.2/dist/esm-browser/index.js'; 
-
+    
     // ** CONFIGURATION **
     const supabaseUrl = 'https://wzwyotzzxycqfwercakh.supabase.co';
-    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind6d3lvdHp6eHljcWZ3ZXJjYWtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcwNTg3MTMsImV4cCI6MjA3MjYzNDcxM30.lgiAf9oBUqsaWGb3u_80wuoKAODQHE_lIBxpGumhrno';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind6d3lvdHp6eHljcWZ3ZXJjYWtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcwNTg3MTMsImV4cCI6MjA3MjYzNDcxM30.lgiAf9oBUqsaWGb3u_80wuoKAODQHE_lIBxpGumhrno'; // ต้องใช้ Key ที่มีสิทธิ์!
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // DOM Elements สำหรับ Auth
+    // DOM Elements
     const authHeader = document.getElementById('auth-header');
     const authControls = document.getElementById('auth-controls');
     const emailInput = document.getElementById('emailInput');
     const passwordInput = document.getElementById('passwordInput');
     const signInBtn = document.getElementById('signInBtn');
-    const signUpBtn = document.getElementById('signUpBtn');
     const signOutBtn = document.getElementById('signOutBtn');
-    const testSection = document.getElementById('test-section');
-    
-    // Global variables สำหรับแบบทดสอบ
-    const questions = {
-        part1: [
-            { text: "ขอโทษครับ/ค่ะ ไม่สนใจต้นสาย" },
-            { text: "มิจฉาชีพหรือป่าว" }
-        ],
-        part2: [
-            { text: "ประกันสุขภาพครอบคลุมโรคเรื้อรังหรือไม่?" },
-            { text: "ซื้อไว้หมดทุกตัวแล้ว" }
-        ],
-        part3: [
-            { text: "คิดว่าแพงเกินไปครับ/ค่ะ" },
-            { text: "รอเงินเดือนออกก่อน" }
-        ]
-    }; // ต้องเพิ่มคำถามทั้งหมดของคุณที่นี่
-    let currentPart = "part1";
-    let shuffledQuestions = [];
-    let currentIndex = 0;
-    let mediaRecorder;
-    let audioChunks = [];
+    const dashboardSection = document.getElementById('dashboard-section');
+    const dashboardTbody = document.getElementById('dashboard-tbody');
+    const dashboardMessage = document.getElementById('dashboard-message');
+    const dateFilter = document.getElementById('dateFilter');
+    const filterBtn = document.getElementById('filterBtn');
 
     // ------------------------------------------
     // AUTHENTICATION LOGIC
     // ------------------------------------------
-
     function updateAuthUI(session) {
         if (session) {
-            // ล็อกอินแล้ว
             authControls.style.display = 'none';
             signOutBtn.style.display = 'block';
             authHeader.textContent = `เข้าสู่ระบบโดย: ${session.user.email}`;
-            testSection.style.display = 'block'; // แสดงส่วนแบบทดสอบ
+            dashboardSection.style.display = 'block'; 
         } else {
-            // ยังไม่ล็อกอิน
             authControls.style.display = 'block';
             signOutBtn.style.display = 'none';
-            authHeader.textContent = 'เข้าสู่ระบบ / ลงทะเบียน';
-            testSection.style.display = 'none'; // ซ่อนส่วนแบบทดสอบ
+            authHeader.textContent = 'เข้าสู่ระบบ (สำหรับหัวหน้างาน)';
+            dashboardSection.style.display = 'none'; 
         }
-        // โหลดแดชบอร์ดใหม่เพื่อดึงข้อมูลตามสถานะปัจจุบัน
-        loadUserAudioDashboard(); 
+        loadAllAudioDashboard();
     }
 
-    // Event Listeners สำหรับ Auth
     signInBtn.onclick = async () => {
         const email = emailInput.value;
         const password = passwordInput.value;
@@ -128,192 +99,105 @@
             alert('เข้าสู่ระบบสำเร็จ!');
         }
     };
-
-    signUpBtn.onclick = async () => {
-        const email = emailInput.value;
-        const password = passwordInput.value;
-        const { data, error } = await supabase.auth.signUp({ email, password });
-
-        if (error) {
-             alert(`ลงทะเบียนล้มเหลว: ${error.message}`);
-        } else if (data.user && data.user.identities && data.user.identities.length === 0) {
-            alert('ลงทะเบียนสำเร็จ! กรุณาตรวจสอบอีเมลของคุณเพื่อยืนยันบัญชี');
-        } else {
-            alert('ลงทะเบียนสำเร็จ! คุณสามารถเข้าสู่ระบบได้ทันที');
-        }
-    };
     
     signOutBtn.onclick = async () => {
         await supabase.auth.signOut();
         alert('ออกจากระบบแล้ว');
     };
     
-    // ติดตามสถานะ Auth เมื่อมีการล็อกอิน/ล็อกเอาท์
     supabase.auth.onAuthStateChange((event, session) => {
         updateAuthUI(session);
     });
 
-    // ตรวจสอบสถานะครั้งแรกเมื่อโหลดหน้า
     supabase.auth.getSession().then(({ data: { session } }) => {
         updateAuthUI(session);
     });
 
     // ------------------------------------------
-    // DASHBOARD LOGIC (ดึงไฟล์เสียงของผู้ใช้ที่ล็อกอินแล้ว)
+    // DASHBOARD LOGIC (ดึงไฟล์เสียงทั้งหมด)
     // ------------------------------------------
-    async function loadUserAudioDashboard() {
-      const container = document.getElementById('audio-list-container');
-      const message = document.getElementById('dashboard-message');
-      container.innerHTML = ''; 
-      message.textContent = '... กำลังโหลดข้อมูล ...';
 
-      // 1. ตรวจสอบสถานะการล็อกอิน
+    filterBtn.onclick = () => loadAllAudioDashboard(dateFilter.value);
+
+    async function loadAllAudioDashboard(dateFilterValue = null) {
+      dashboardTbody.innerHTML = ''; 
+      dashboardMessage.textContent = '... กำลังโหลดข้อมูลทั้งหมด ...';
+
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-          message.textContent = 'กรุณาเข้าสู่ระบบเพื่อดูรายงานผล (RLS ต้องใช้สถานะ authenticated)';
+          dashboardMessage.textContent = 'กรุณาเข้าสู่ระบบ';
           return;
       }
-      
-      // 2. ดึงข้อมูลจากตาราง 'voice_answers'
-      // RLS Policy ที่คุณตั้งไว้จะกรองข้อมูลให้เหลือเฉพาะของผู้ใช้ที่ล็อกอินอยู่ 
-      const { 
-        data: audioRecords, 
-        error 
-      } = await supabase
+
+      let query = supabase
         .from('voice_answers') 
-        .select('question_number, audio_url')
-        .order('question_number', { ascending: true }); 
+        .select('created_at, user_id, question_number, audio_url')
+        .order('created_at', { ascending: false });
+
+      // การกรองตามวันที่
+      if (dateFilterValue) {
+          const startDate = dateFilterValue + 'T00:00:00.000Z';
+          const endDate = dateFilterValue + 'T23:59:59.999Z';
+          query = query.gte('created_at', startDate).lte('created_at', endDate);
+      }
+      
+      const { data: audioRecords, error } = await query;
       
       if (error) {
-        message.textContent = `เกิดข้อผิดพลาดในการดึงข้อมูล: ${error.message}`;
+        dashboardMessage.textContent = `เกิดข้อผิดพลาดในการดึงข้อมูล: ${error.message}`;
         console.error("Supabase Select Error:", error);
         return;
       }
       
       if (audioRecords.length === 0) {
-        message.textContent = 'ไม่พบไฟล์เสียงที่คุณบันทึกไว้';
+        dashboardMessage.textContent = `ไม่พบไฟล์เสียง${dateFilterValue ? 'สำหรับวันที่ ' + dateFilterValue : ''}`;
         return;
       }
       
-      message.textContent = `พบไฟล์เสียงทั้งหมด ${audioRecords.length} รายการ (เฉพาะของคุณ)`; 
+      dashboardMessage.textContent = `พบไฟล์เสียงทั้งหมด ${audioRecords.length} รายการ`; 
 
       audioRecords.forEach(record => {
-        const questionNumber = record.question_number || 'N/A';
-        const url = record.audio_url; 
+        const row = dashboardTbody.insertRow();
+        const createdAt = new Date(record.created_at);
+        const formattedDate = createdAt.toLocaleDateString('th-TH', { 
+            year: 'numeric', month: 'short', day: 'numeric', 
+            hour: '2-digit', minute: '2-digit'
+        });
 
-        // สร้าง Element เพื่อแสดงผล
-        const cardCol = document.createElement('div');
-        cardCol.className = 'col-lg-4 col-md-6 mb-4';
-        
-        const card = document.createElement('div');
-        card.className = 'card shadow-sm h-100'; 
-        card.innerHTML = `
-          <div class="card-body">
-            <h5 class="card-title">คำถามข้อที่ ${questionNumber}</h5>
-            <p class="card-text text-muted small text-truncate">${url.substring(0, 50)}...</p>
-            <audio controls class="w-100 mt-2">
-              <source src="${url}" type="audio/webm">
-              เบราว์เซอร์ของคุณไม่รองรับการเล่นไฟล์เสียง
-            </audio>
-          </div>
-        `;
-        
-        cardCol.appendChild(card);
-        container.appendChild(cardCol);
+        // 1. วันที่บันทึก
+        row.insertCell().textContent = formattedDate;
+
+        // 2. User ID / พนักงาน
+        const userCell = row.insertCell();
+        userCell.innerHTML = `<strong>ID:</strong> ${record.user_id.substring(0, 8)}...<br> <small><em>(พนักงาน: ไม่ทราบชื่อจริงจากตารางนี้)</em></small>`; // แสดงแค่ UUID บางส่วน
+
+        // 3. ข้อคำถาม
+        row.insertCell().textContent = `ข้อที่ ${record.question_number || 'N/A'}`;
+
+        // 4. ลิงก์ไฟล์เสียง (Public URL)
+        const urlCell = row.insertCell();
+        urlCell.innerHTML = `<a href="${record.audio_url}" target="_blank" class="small text-truncate" style="max-width: 200px; display: block;">${record.audio_url.substring(0, 40)}...</a>`;
+
+        // 5. เล่นไฟล์
+        const playCell = row.insertCell();
+        playCell.innerHTML = `<audio controls style="width: 100px; height: 30px;"><source src="${record.audio_url}" type="audio/webm">เบราว์เซอร์ไม่รองรับ</audio>`;
+
+        // 6. ดาวน์โหลด
+        const downloadCell = row.insertCell();
+        const filename = `${formattedDate.replace(/ /g, '_')}_${record.user_id.substring(0, 4)}_Q${record.question_number}.webm`;
+        downloadCell.innerHTML = `<a href="${record.audio_url}" download="${filename}" class="btn btn-sm btn-outline-success">⬇️ ดาวน์โหลด</a>`;
       });
     }
 
-    // ------------------------------------------
-    // QUIZ/RECORDING LOGIC (ย่อ)
-    // ------------------------------------------
-
-    function shuffle(array) {
-        let shuffled = [...array];
-        for (let i = shuffled.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-        }
-        return shuffled;
-    }
-
-    window.startPart = function(partName) {
-        currentPart = partName;
-        shuffledQuestions = shuffle(questions[partName]);
-        currentIndex = 0;
-        loadQuestion();
-    }
-
-    function getSectionTitle(part) {
-        switch (part) {
-            case "part1": return "ส่วนที่ 1: โน้มน้าวเมื่อลูกค้าปฏิเสธต้นสาย";
-            case "part2": return "ส่วนที่ 2: ตอบคำถามแก้ไขความกังวลเรื่องความคุ้มครอง";
-            case "part3": return "ส่วนที่ 3: โน้มน้าวหลังปิดการขาย";
-            default: return "";
-        }
-    }
-
-    function loadQuestion() {
-        const q = shuffledQuestions[currentIndex];
-        document.getElementById("section-title").textContent = getSectionTitle(currentPart);
-        document.getElementById("question-text").textContent = q.text;
-        document.getElementById("employee-response").src = "";
-        document.getElementById("download-link").href = "#";
-    }
-
-    window.nextQuestion = function() {
-        // ต้องเพิ่มโค้ดที่บันทึก URL ไฟล์เสียงลงในตาราง 'voice_answers'
-        currentIndex++;
-        if (currentIndex < shuffledQuestions.length) {
-            loadQuestion();
-        } else {
-            alert("จบคำถามในส่วนนี้แล้ว กรุณาเลือกส่วนถัดไป");
-        }
-    }
-
-    window.startRecording = async function() {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        mediaRecorder = new MediaRecorder(stream);
-        mediaRecorder.start();
-        audioChunks = [];
-
-        mediaRecorder.ondataavailable = event => {
-            audioChunks.push(event.data);
-        };
-
-        mediaRecorder.onstop = async () => {
-            const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-            const audioUrl = URL.createObjectURL(audioBlob);
-            document.getElementById("employee-response").src = audioUrl;
-            document.getElementById("download-link").href = audioUrl;
-
-            // **NOTE:** Logic อัปโหลดนี้ยังใช้ bucket 'responses' และยังไม่ได้ insert ลง 'voice_answers'
-            const filename = `response_${uuidv4()}.webm`;
-            const { error } = await supabase.storage
-                .from('responses') // ควรเปลี่ยนเป็น 'audios'
-                .upload(filename, audioBlob, {
-                    contentType: 'audio/webm',
-                    upsert: true
-                });
-            if (error) {
-                console.error("Upload failed:", error.message);
-                alert("เกิดข้อผิดพลาดในการอัปโหลดเสียง");
-            } else {
-                console.log("Upload success:", filename);
-                // *** สำคัญ: ต้องเพิ่มโค้ด INSERT ลงตาราง voice_answers ตรงนี้ ***
-                // โดยใช้ supabase.storage.getPublicUrl() เพื่อเอา URL มา insert
-            }
-        };
-    }
-
-    window.stopRecording = function() {
-        if (mediaRecorder && mediaRecorder.state !== "inactive") {
-            mediaRecorder.stop();
-        }
-    }
-    
     // ตั้งค่าเริ่มต้น
-    window.startPart("part1");
-
+    document.addEventListener('DOMContentLoaded', () => {
+        // ตั้งค่าวันที่เริ่มต้นของตัวกรองเป็นวันนี้
+        const today = new Date().toISOString().split('T')[0];
+        dateFilter.value = today; 
+        
+        // โหลดข้อมูลครั้งแรก (ถ้าล็อกอินแล้ว)
+        loadAllAudioDashboard(today);
+    });
 </script>
 </body>
 </html>
