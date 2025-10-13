@@ -3,55 +3,23 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Dashboard | ตรวจสอบ Roleplay (กรองตามวันที่)</title>
+    <title>Dashboard | ตรวจสอบ Roleplay (ดึงจาก Bucket โดยตรง)</title>
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet"/>
     
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #f8f9fa;
-            min-height: 100vh;
-            padding: 20px;
-        }
-        .container {
-            max-width: 1300px;
-            margin-top: 20px;
-        }
-        .card {
-            border-radius: 0.75rem;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-        }
-        .table th, .table td {
-            vertical-align: middle;
-            font-size: 0.9rem;
-        }
-        .table th {
-            white-space: nowrap;
-            background-color: #343a40 !important;
-            color: white;
-        }
-        .url-cell {
-            max-width: 200px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-        .action-btns button, .action-btns a {
-            margin-right: 5px;
-            white-space: nowrap;
-        }
-        #modalAudioPlayer {
-            width: 100%;
-            height: 50px;
-        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f8f9fa; min-height: 100vh; padding: 20px; }
+        .container { max-width: 1300px; margin-top: 20px; }
+        .card { border-radius: 0.75rem; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05); }
+        .table th { white-space: nowrap; background-color: #343a40 !important; color: white; }
+        .url-cell { max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="card p-4">
-            <h1 class="text-center mb-4 text-primary"><i class="bi bi-person-badge-fill me-2"></i> Dashboard หัวหน้า: ตรวจสอบผล Roleplay</h1>
+            <h1 class="text-center mb-4 text-primary"><i class="bi bi-folder-fill me-2"></i> Dashboard หัวหน้า: ดึงไฟล์เสียงจาก Bucket</h1>
             
             <div class="row mb-4 p-3 bg-light rounded-3 border">
                 <div class="col-md-4">
@@ -59,7 +27,7 @@
                     <input type="date" class="form-control" id="filterDate" required>
                 </div>
                 <div class="col-md-8 d-flex align-items-end">
-                    <button class="btn btn-primary w-100" id="fetchDataBtn" onclick="fetchSubmissions()">
+                    <button class="btn btn-primary w-100" id="fetchDataBtn" onclick="fetchAudioFiles()">
                         <i class="bi bi-search me-1"></i> ค้นหาไฟล์เสียงตามวันที่
                     </button>
                 </div>
@@ -67,7 +35,7 @@
 
             <div id="loadingStatus" class="alert alert-info text-center" style="display: none;">
                 <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                กำลังโหลดข้อมูลจาก Supabase...
+                กำลังโหลด **และกรอง** ข้อมูลไฟล์เสียง... (อาจใช้เวลาถ้ามีไฟล์จำนวนมาก)
             </div>
             
             <div id="tableSection" style="display: none;">
@@ -77,25 +45,24 @@
                         <thead class="table-dark">
                             <tr>
                                 <th>#</th>
-                                <th>ชื่อผู้เข้าสอบ</th>
-                                <th>อีเมล/UUID ผู้ส่ง</th>
+                                <th>Full Path / ชื่อไฟล์</th>
+                                <th>User ID (UUID)</th>
                                 <th>Part / ข้อ</th>
-                                <th>คำถาม</th>
-                                <th>เวลาส่ง (นาที)</th>
+                                <th>วันที่/เวลาอัปโหลด</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody id="submissionsTableBody">
-                            </tbody>
+                        </tbody>
                     </table>
                 </div>
             </div>
             
             <div id="initialMessage" class="alert alert-secondary text-center">
-                กรุณาเลือกวันที่และกด "ค้นหา" เพื่อแสดงรายการไฟล์เสียง
+                กรุณาเลือกวันที่และกด "ค้นหา" เพื่อแสดงรายการไฟล์เสียงทั้งหมด
             </div>
             <div id="noDataMessage" class="alert alert-warning text-center" style="display: none;">
-                ไม่พบข้อมูลการส่งแบบทดสอบในวันที่เลือก 😔
+                ไม่พบไฟล์เสียงในวันที่เลือก 😔
             </div>
         </div>
     </div>
@@ -108,7 +75,7 @@
             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body text-center">
-            <p id="modalQuestionText" class="text-muted"></p>
+            <p id="modalFilePath" class="text-muted"></p>
             <audio id="modalAudioPlayer" controls></audio>
           </div>
         </div>
@@ -121,6 +88,7 @@
         
         // **ตั้งค่า Supabase ของคุณ**
         const supabaseUrl = 'https://wzwyotzzxycqfwercakh.supabase.co';
+        // ใช้ Key เดียวกัน (Anon Key)
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind6d3lvdHp6eHljcWZ3ZXJjYWtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcwNTg3MTMsImV4cCI6MjA3MjYzNDcxM30.lgiAf9oBUqsaWGb3u_80wuoKAODQHE_lIBxpGumhrno'; 
         const supabase = createClient(supabaseUrl, supabaseKey);
 
@@ -133,43 +101,34 @@
         const selectedDateDisplay = document.getElementById('selectedDateDisplay');
         const audioModal = new bootstrap.Modal(document.getElementById('audioModal'));
         const modalAudioPlayer = document.getElementById('modalAudioPlayer');
-        const modalQuestionText = document.getElementById('modalQuestionText');
+        const modalFilePath = document.getElementById('modalFilePath');
         
         const BUCKET_NAME = 'audios';
         
         /**
          * สร้าง Public URL สำหรับไฟล์ใน Supabase Storage
-         * **ฟังก์ชันนี้เป็นส่วนสำคัญที่ทำให้สามารถเล่นไฟล์เสียงจาก Bucket ได้**
+         * โดยใช้ชื่อ Bucket และ Path ภายใน
+         * @param {string} fullPathInBucket - Path เต็มของไฟล์ใน Bucket (เช่น: uuid/part1/q1_uuid.webm)
          */
-        function getPublicFileUrl(fullPath) {
-            // fullPath คือ row.audio_url ที่ดึงมาจาก DB
-            // Path ที่ใช้ในการสร้าง Public URL ต้องเป็น Path ภายใน Bucket เท่านั้น (เช่น: uuid/part1/q1_uuid.webm)
-            const storageBaseUrl = `${supabaseUrl}/storage/v1/object/public/${BUCKET_NAME}/`;
-
-            // ตรวจสอบว่า fullPath เป็น URL เต็มหรือไม่ หากเป็น ให้ตัด Base URL ทิ้ง
-            const path = fullPath.startsWith(storageBaseUrl) ? 
-                fullPath.replace(storageBaseUrl, '') : 
-                fullPath;
-
-            // สร้าง Public URL ที่ถูกต้องเพื่อใช้ในการเล่น/ดาวน์โหลด
-            return `${storageBaseUrl}${path}`;
+        function getPublicFileUrl(fullPathInBucket) {
+            // โครงสร้าง URL: [supabaseUrl]/storage/v1/object/public/[bucketName]/[filePath]
+            return `${supabaseUrl}/storage/v1/object/public/${BUCKET_NAME}/${fullPathInBucket}`;
         }
 
         /**
-         * ดึงข้อมูลการส่งแบบทดสอบตามวันที่เลือก
+         * ดึงข้อมูลไฟล์ทั้งหมดจาก Bucket แล้วกรองตามวันที่ในฝั่ง Client
          */
-        window.fetchSubmissions = async function() {
+        window.fetchAudioFiles = async function() {
             const selectedDate = filterDateInput.value;
             if (!selectedDate) {
                 alert('กรุณาเลือกวันที่ก่อนทำการค้นหา!');
                 return;
             }
 
-            // คำนวณขอบเขตเวลา (Start of Day to End of Day ในรูปแบบ ISO UTC)
-            const dateStart = selectedDate + 'T00:00:00.000Z'; 
-            const dateEnd = selectedDate + 'T23:59:59.999Z';
+            // กำหนดขอบเขตเวลาสำหรับกรองใน JavaScript (ในรูปแบบ UTC)
+            const dateStart = new Date(selectedDate + 'T00:00:00Z');
+            const dateEnd = new Date(selectedDate + 'T23:59:59Z');
 
-            // ซ่อน/แสดงสถานะ
             initialMessage.style.display = 'none';
             tableSection.style.display = 'none';
             noDataMessage.style.display = 'none';
@@ -177,64 +136,106 @@
             tableBody.innerHTML = '';
             
             try {
-                // ดึงข้อมูลจากตาราง 'submissions' พร้อมตัวกรองวันที่
-                const { data, error } = await supabase
-                    .from('submissions') 
-                    .select('id, name, email, user_id, part_number, question_number, question_text, created_at, audio_url') 
-                    .gte('created_at', dateStart) 
-                    .lte('created_at', dateEnd)   
-                    .order('created_at', { ascending: true }); 
+                // 1. ดึงรายการโฟลเดอร์ (User UUIDs) ใน Bucket ก่อน
+                const { data: rootData, error: rootError } = await supabase
+                    .storage
+                    .from(BUCKET_NAME)
+                    .list('', { 
+                        limit: 10000, // เพิ่ม limit ให้สูงที่สุดเท่าที่จำเป็น
+                        offset: 0 
+                    });
 
-                loadingStatus.style.display = 'none';
+                if (rootError) throw rootError;
 
-                if (error) {
-                    console.error('Error fetching submissions:', error);
-                    alert('เกิดข้อผิดพลาดในการดึงข้อมูล: ' + error.message + ' (ตรวจสอบ RLS และชื่อคอลัมน์)');
-                    return;
+                const userFolders = rootData.filter(item => item.name !== '.emptyFolderPlaceholder' && item.id === null); // กรองเอาแต่โฟลเดอร์ (User UUIDs)
+
+                let allFilteredFiles = [];
+
+                // 2. วนลูปเข้าไปในแต่ละ User Folder เพื่อดึงไฟล์ทั้งหมด (ลึก 2 ชั้น)
+                for (const folder of userFolders) {
+                    // Path 1: User UUID (เช่น: ced98c31-d34d-4cf7-b97a-a2a03df3c23e)
+                    const userPath = folder.name; 
+                    
+                    // ดึง Sub-folders/Files ในชั้น User UUID (เช่น part1, part2)
+                    const { data: partData, error: partError } = await supabase
+                        .storage
+                        .from(BUCKET_NAME)
+                        .list(userPath, { limit: 10000 });
+
+                    if (partError) throw partError;
+                    
+                    // วนลูปเข้า Part Folder (เช่น part1) เพื่อดึงไฟล์ .webm
+                    for (const partItem of partData) {
+                        if (partItem.id !== null) continue; // ข้ามไฟล์ในชั้นนี้ ถ้ามี
+                        
+                        const partPath = `${userPath}/${partItem.name}`; // เช่น: uuid/part1
+                        
+                        const { data: fileData, error: fileError } = await supabase
+                            .storage
+                            .from(BUCKET_NAME)
+                            .list(partPath, { limit: 10000 });
+
+                        if (fileError) throw fileError;
+
+                        // 3. กรองข้อมูลตามวันที่ใน JavaScript
+                        const filteredFiles = fileData
+                            .filter(file => file.name.endsWith('.webm') && file.created_at)
+                            .map(file => {
+                                const fileDate = new Date(file.created_at);
+                                
+                                // กรอง: created_at อยู่ระหว่าง dateStart และ dateEnd
+                                if (fileDate >= dateStart && fileDate < dateEnd) {
+                                    return {
+                                        name: file.name,
+                                        path: `${partPath}/${file.name}`, // Full Path ใน Bucket
+                                        user_id: userPath,
+                                        part: partItem.name,
+                                        created_at: file.created_at
+                                    };
+                                }
+                                return null;
+                            })
+                            .filter(item => item !== null);
+
+                        allFilteredFiles = allFilteredFiles.concat(filteredFiles);
+                    }
                 }
 
-                if (data.length === 0) {
+                loadingStatus.style.display = 'none';
+                allFilteredFiles.sort((a, b) => new Date(a.created_at) - new Date(b.created_at)); // เรียงตามเวลา
+
+                if (allFilteredFiles.length === 0) {
                     noDataMessage.style.display = 'block';
                     selectedDateDisplay.textContent = selectedDate;
                     return;
                 }
                 
-                // แสดงผลลัพธ์
+                // 4. แสดงผลลัพธ์
                 tableSection.style.display = 'block';
                 selectedDateDisplay.textContent = selectedDate;
 
-                data.forEach((row, index) => {
+                allFilteredFiles.forEach((file, index) => {
                     const tr = document.createElement('tr');
                     
-                    // 1. Index
-                    tr.innerHTML += `<td>${index + 1}</td>`;
+                    const publicUrl = getPublicFileUrl(file.path);
+                    const timeOnly = new Date(file.created_at).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
                     
-                    // 2. Name
-                    const displayName = row.name && row.name.trim() !== '' ? row.name : `[Anon]`;
-                    tr.innerHTML += `<td>${displayName}</td>`;
+                    // แยก Question Number ออกจากชื่อไฟล์ (เช่น q1_uuid.webm -> q1)
+                    const matchQ = file.name.match(/q(\d+)_/i);
+                    const questionNumber = matchQ ? matchQ[1] : 'N/A';
+                    
+                    tr.innerHTML += `<td>${index + 1}</td>`;
+                    tr.innerHTML += `<td class="url-cell" title="${file.path}">${file.name}</td>`;
+                    tr.innerHTML += `<td class="url-cell" title="${file.user_id}">${file.user_id.substring(0, 8)}...</td>`;
+                    tr.innerHTML += `<td>${file.part} / ข้อ ${questionNumber}</td>`;
+                    tr.innerHTML += `<td>${timeOnly}</td>`;
 
-                    // 3. Email / User ID (แสดงได้ทั้งอีเมลหรือ UUID)
-                    const displayIdentifier = row.email && row.email.trim() !== '' ? row.email : (row.user_id ? `${row.user_id.substring(0, 8)}...` : 'N/A');
-                    const titleIdentifier = row.email && row.email.trim() !== '' ? row.email : row.user_id;
-                    tr.innerHTML += `<td class="url-cell" title="${titleIdentifier}">${displayIdentifier}</td>`; 
-
-                    // 4. Part / Question
-                    tr.innerHTML += `<td>Part ${row.part_number} / ข้อ ${row.question_number}</td>`;
-
-                    // 5. Question Text
-                    tr.innerHTML += `<td class="url-cell" title="${row.question_text}">${row.question_text}</td>`;
-
-                    // 6. Created At (แสดงเฉพาะเวลา)
-                    const date = new Date(row.created_at).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
-                    tr.innerHTML += `<td>${date}</td>`;
-
-                    // 7. Actions (Play & Download)
-                    const publicUrl = getPublicFileUrl(row.audio_url);
-                    const downloadFileName = `${displayName.replace(/[^a-z0-9]/gi, '_')}_P${row.part_number}Q${row.question_number}_${selectedDate}.webm`;
+                    // 5. Actions (Play & Download)
+                    const downloadFileName = `${file.user_id.substring(0, 8)}_${file.part}_Q${questionNumber}_${selectedDate}.webm`;
 
                     tr.innerHTML += `
                         <td class="action-btns">
-                            <button class="btn btn-sm btn-primary play-btn" data-audio-url="${publicUrl}" data-question-text="${row.question_text}">
+                            <button class="btn btn-sm btn-primary play-btn" data-audio-url="${publicUrl}" data-file-path="${file.path}">
                                 <i class="bi bi-play-fill"></i> เล่น
                             </button>
                             <a href="${publicUrl}" download="${downloadFileName}" class="btn btn-sm btn-success ms-2">
@@ -245,19 +246,19 @@
                     tableBody.appendChild(tr);
                 });
                 
-                // 3. Setup Event Listeners สำหรับปุ่ม Play
+                // 6. Setup Event Listeners
                 document.querySelectorAll('.play-btn').forEach(button => {
                     button.addEventListener('click', (e) => {
                         modalAudioPlayer.pause(); 
                         modalAudioPlayer.currentTime = 0;
-                        
                         const audioUrl = e.currentTarget.getAttribute('data-audio-url');
-                        const questionText = e.currentTarget.getAttribute('data-question-text');
-                        
+                        const filePath = e.currentTarget.getAttribute('data-file-path');
+
                         if (audioUrl) {
                             modalAudioPlayer.src = audioUrl;
-                            modalQuestionText.textContent = `คำถาม: ${questionText}`;
+                            modalFilePath.textContent = `Path: ${filePath}`;
                             audioModal.show();
+                            modalAudioPlayer.play();
                         } else {
                             alert('ไม่พบ URL ไฟล์เสียง');
                         }
@@ -266,14 +267,13 @@
 
             } catch (err) {
                 loadingStatus.style.display = 'none';
-                console.error('An unexpected error occurred:', err);
-                alert('เกิดข้อผิดพลาดที่ไม่คาดคิด กรุณาตรวจสอบ Console');
+                console.error('An unexpected error occurred or Storage error:', err);
+                alert(`เกิดข้อผิดพลาดในการดึงไฟล์จาก Bucket: ${err.message || 'ตรวจสอบ RLS ของ Storage (Policy: select/read)'}`);
             }
         }
 
         // --- Initialization ---
         document.addEventListener('DOMContentLoaded', () => {
-            // ไม่โหลดข้อมูลอัตโนมัติ (ตามคำขอ)
             initialMessage.style.display = 'block';
             tableSection.style.display = 'none';
         });
