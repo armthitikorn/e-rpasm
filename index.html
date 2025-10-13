@@ -1,179 +1,205 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Supervisor Dashboard - ตรวจสอบผลการบันทึกเสียง</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Dashboard | ตรวจสอบ Roleplay</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet"/>
+    
     <style>
         body {
-            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f8f9fa;
+            min-height: 100vh;
+            padding: 20px;
         }
         .container {
-            margin-top: 50px;
-        }
-        /* ซ่อน Audio Player หลักไว้ แต่ให้แสดง Controls เมื่อถูกเรียกใช้ */
-        #single-audio-player {
-            width: 100%;
+            max-width: 1200px;
             margin-top: 20px;
-            display: none; /* ซ่อนไว้เมื่อไม่มีการเล่น */
+        }
+        .card {
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        }
+        .table th, .table td {
+            vertical-align: middle;
+            font-size: 0.9rem;
+        }
+        .table th {
+            white-space: nowrap;
+        }
+        /* Style for better visibility of long URLs/Names */
+        .url-cell {
+            max-width: 250px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .audio-player-controls button {
+            margin-right: 5px;
         }
     </style>
 </head>
 <body>
+    <div class="container">
+        <div class="card p-4">
+            <h1 class="text-center mb-4 text-primary"><i class="bi bi-bar-chart-line-fill me-2"></i> Dashboard หัวหน้า: ตรวจสอบผล Roleplay</h1>
+            
+            <div id="loadingStatus" class="alert alert-info text-center">
+                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                กำลังโหลดข้อมูลจาก Supabase...
+            </div>
 
-<div class="container">
-    <h2 class="text-center mb-4">รายงานผลการบันทึกเสียงของพนักงาน</h2>
-
-    <div class="card mb-4 bg-light">
-        <div class="card-body">
-            <h5 class="card-title">ไฟล์เสียงที่กำลังเล่นอยู่</h5>
-            <audio id="single-audio-player" controls></audio>
+            <div class="table-responsive">
+                <table class="table table-hover table-striped" id="submissionsTable">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>#</th>
+                            <th>ชื่อผู้เข้าสอบ</th>
+                            <th>อีเมล/User ID</th>
+                            <th>Part / ข้อ</th>
+                            <th>คำถาม</th>
+                            <th>ไฟล์เสียง</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="submissionsTableBody">
+                        </tbody>
+                </table>
+            </div>
+            
+            <div id="noDataMessage" class="alert alert-warning text-center" style="display: none;">
+                ไม่พบข้อมูลการส่งแบบทดสอบ
+            </div>
         </div>
     </div>
-    
-    <div id="submissions-table-container">
-        <p class="text-center text-muted" id="loading-status">กำลังโหลดข้อมูล...</p>
+
+    <div class="modal fade" id="audioModal" tabindex="-1" aria-labelledby="audioModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="audioModalLabel">ไฟล์เสียง Roleplay</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body text-center">
+            <p id="modalQuestionText" class="text-muted"></p>
+            <audio id="modalAudioPlayer" controls class="w-100"></audio>
+          </div>
         </div>
-    
-</div>
+      </div>
+    </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-<script>
-    // ======================================================================
-    // ⚠️ ส่วนที่ต้องแก้ไข: เปลี่ยน Supabase URL และ Key ของคุณ
-    // ======================================================================
-    const SUPABASE_URL = 'YOUR_SUPABASE_PROJECT_URL'; 
-    const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
-    // *หากหน้า Dashboard นี้มีระบบ Login ควรใช้ Service Role Key หรือ JWT Token แทน Anon Key*
-
-    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    // ======================================================================
-
-
-    const tableContainer = document.getElementById('submissions-table-container');
-    const loadingStatus = document.getElementById('loading-status');
-    const audioPlayer = document.getElementById('single-audio-player');
-
-
-    /**
-     * ฟังก์ชันสำหรับจัดการ Audio Player ตัวเดียว
-     * จะถูกเรียกเมื่อกดปุ่ม "เล่นไฟล์"
-     */
-    window.playAudio = function(audioUrl) {
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="module">
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
         
-        // 1. ตรวจสอบว่า URL ที่จะเล่นใหม่ซ้ำกับอันเดิมหรือไม่
-        if (audioPlayer.src === audioUrl && !audioPlayer.paused) {
-            // ถ้ากำลังเล่นอยู่ ให้หยุด
-            audioPlayer.pause();
-            audioPlayer.style.display = 'none'; // ซ่อน Player เมื่อหยุด
-            return;
-        }
+        // **ตั้งค่า Supabase ของคุณ**
+        const supabaseUrl = 'https://wzwyotzzxycqfwercakh.supabase.co';
+        // 🚨 คำเตือน: ใน Production จริง ควรใช้ Service Role Key บนฝั่ง Server 
+        // หรือใช้ RLS (Row Level Security) ที่เข้มงวด
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind6d3lvdHp6eHljcWZ3ZXJjYWtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcwNTg3MTMsImV4cCI6MjA3MjYzNDcxM30.lgiAf9oBUqsaWGb3u_80wuoKAODQHE_lIBxpGumhrno'; 
+        const supabase = createClient(supabaseUrl, supabaseKey);
 
-        // 2. ตั้งค่า URL ใหม่และเริ่มเล่น
-        audioPlayer.pause(); // หยุดเล่นไฟล์เก่า
-        audioPlayer.src = audioUrl;
-        
-        // แสดง player ให้ผู้ใช้เห็น
-        audioPlayer.style.display = 'block'; 
+        const tableBody = document.getElementById('submissionsTableBody');
+        const loadingStatus = document.getElementById('loadingStatus');
+        const noDataMessage = document.getElementById('noDataMessage');
+        const audioModal = new bootstrap.Modal(document.getElementById('audioModal'));
+        const modalAudioPlayer = document.getElementById('modalAudioPlayer');
+        const modalQuestionText = document.getElementById('modalQuestionText');
 
-        // 3. เริ่มเล่น
-        audioPlayer.load();
-        audioPlayer.play().catch(error => {
-            console.error("Playback failed:", error);
-            alert("ไม่สามารถเล่นไฟล์ได้: เบราว์เซอร์อาจบล็อกการเล่นอัตโนมัติ กรุณาลองคลิกที่ Controls Player ด้านบน");
-        });
-    };
+        /**
+         * ดึงข้อมูลการส่งแบบทดสอบจากตาราง submissions (หรือ View ที่ถูกต้อง)
+         */
+        async function fetchSubmissions() {
+            loadingStatus.style.display = 'block';
+            tableBody.innerHTML = '';
 
+            // 💡 เราจะใช้ 'submissions_with_email' หากคุณสร้าง View สำเร็จ 
+            // แต่ถ้ายังไม่สำเร็จ ให้ใช้ตาราง 'submissions' ก่อน แล้วค่อย Join ด้วย JS
+            // เพื่อความปลอดภัย เราใช้ตาราง 'submissions' และแสดง 'email' Placeholder
 
-    /**
-     * ดึงข้อมูลทั้งหมดจากตาราง submissions
-     */
-    async function fetchSubmissions() {
-        loadingStatus.textContent = "กำลังดึงข้อมูลจากฐานข้อมูล...";
-        
-        // ดึงคอลัมน์ทั้งหมด (รวมถึง audio_url) และเรียงตามเวลาล่าสุด
-        const { data, error } = await supabase
-            .from('submissions') 
-            .select('*')
-            .order('created_at', { ascending: false });
+            const { data, error } = await supabase
+                .from('submissions') 
+                .select('*') 
+                .order('created_at', { ascending: false });
 
-        if (error) {
-            console.error("Error fetching data:", error);
-            loadingStatus.textContent = "เกิดข้อผิดพลาดในการโหลดข้อมูล: " + error.message;
-            return;
-        }
+            loadingStatus.style.display = 'none';
 
-        loadingStatus.style.display = 'none';
-        renderTable(data);
-    }
+            if (error) {
+                console.error('Error fetching submissions:', error);
+                alert('เกิดข้อผิดพลาดในการดึงข้อมูล: ' + error.message);
+                return;
+            }
 
+            if (data.length === 0) {
+                noDataMessage.style.display = 'block';
+                return;
+            }
 
-    /**
-     * สร้างตาราง HTML จากข้อมูลที่ได้รับ
-     */
-    function renderTable(submissions) {
-        if (submissions.length === 0) {
-            tableContainer.innerHTML = '<p class="text-center text-muted">ไม่พบข้อมูลการบันทึกเสียง</p>';
-            return;
-        }
+            // ----------------------------------------------------
+            // สร้างแถวข้อมูลในตาราง
+            // ----------------------------------------------------
+            data.forEach((row, index) => {
+                const tr = document.createElement('tr');
+                
+                // 1. Index
+                tr.innerHTML += `<td>${index + 1}</td>`;
+                
+                // 2. Name (ใช้ Name หรือ User ID ถ้า Name เป็นค่าว่าง)
+                const displayName = row.name || `[ID: ${row.user_id.substring(0, 8)}]`;
+                tr.innerHTML += `<td>${displayName}</td>`;
 
-        let tableHTML = `
-            <table class="table table-striped table-hover">
-                <thead class="table-dark">
-                    <tr>
-                        <th>#</th>
-                        <th>ชื่อพนักงาน</th>
-                        <th>คำถาม</th>
-                        <th>เวลาบันทึก</th>
-                        <th>การดำเนินการ</th>
-                    </tr>
-                </thead>
-                <tbody>
-        `;
+                // 3. Email / User ID
+                tr.innerHTML += `<td class="url-cell" title="${row.user_id}">${row.email || row.user_id}</td>`; 
 
-        submissions.forEach((row, index) => {
-            const date = new Date(row.created_at).toLocaleString('th-TH', { 
-                year: 'numeric', month: 'short', day: 'numeric', 
-                hour: '2-digit', minute: '2-digit' 
+                // 4. Part / Question
+                tr.innerHTML += `<td>Part ${row.part_number} / ข้อ ${row.question_number}</td>`;
+
+                // 5. Question Text
+                tr.innerHTML += `<td class="url-cell" title="${row.question_text}">${row.question_text}</td>`;
+
+                // 6. Audio URL (แสดง Link)
+                tr.innerHTML += `<td class="url-cell" title="${row.audio_url}"><a href="${row.audio_url}" target="_blank">Link</a></td>`;
+
+                // 7. Actions (Play & Download)
+                tr.innerHTML += `
+                    <td>
+                        <div class="audio-player-controls d-flex">
+                            <button class="btn btn-sm btn-primary play-btn" data-audio-url="${row.audio_url}" data-question-text="${row.question_text}">
+                                <i class="bi bi-play-fill"></i> เล่น
+                            </button>
+                            <a href="${row.audio_url}" download="roleplay_${row.user_id}_p${row.part_number}_q${row.question_number}.webm" class="btn btn-sm btn-success ms-2">
+                                <i class="bi bi-download"></i> ดาวน์โหลด
+                            </a>
+                        </div>
+                    </td>
+                `;
+                tableBody.appendChild(tr);
             });
+            
+            // ----------------------------------------------------
+            // เพิ่ม Event Listener สำหรับปุ่ม Play
+            // ----------------------------------------------------
+            document.querySelectorAll('.play-btn').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const audioUrl = e.currentTarget.getAttribute('data-audio-url');
+                    const questionText = e.currentTarget.getAttribute('data-question-text');
+                    
+                    if (audioUrl) {
+                        modalAudioPlayer.src = audioUrl;
+                        modalQuestionText.textContent = `คำถาม: ${questionText}`;
+                        audioModal.show();
+                    } else {
+                        alert('ไม่พบ URL ไฟล์เสียง');
+                    }
+                });
+            });
+        }
 
-            // ส่วนนี้คือการใช้ปุ่มแทน Audio Player เพื่อแก้ไขปัญหา WebMediaPlayer
-            // และใช้ audio_url ที่บันทึกไว้สำหรับลิงก์ดาวน์โหลดโดยตรง
-            const actionButtons = `
-                <button class="btn btn-primary btn-sm mb-1 w-100" onclick="playAudio('${row.audio_url}')">
-                    ▶️ เล่นไฟล์
-                </button>
-                <a href="${row.audio_url}" download="response_${row.name}_${row.created_at}.webm" class="btn btn-success btn-sm w-100">
-                    ⬇️ ดาวน์โหลด
-                </a>
-            `;
-
-            tableHTML += `
-                <tr>
-                    <td>${index + 1}</td>
-                    <td>${row.name || 'ไม่ระบุชื่อ'}</td>
-                    <td>${row.question_text || '-'}</td>
-                    <td>${date}</td>
-                    <td>${actionButtons}</td>
-                </tr>
-            `;
-        });
-
-        tableHTML += `
-                </tbody>
-            </table>
-        `;
-        
-        tableContainer.innerHTML = tableHTML;
-    }
-
-
-    // เริ่มต้นโหลดข้อมูลเมื่อหน้าเว็บโหลดเสร็จ
-    document.addEventListener('DOMContentLoaded', fetchSubmissions);
-</script>
-
+        // โหลดข้อมูลเมื่อหน้าเว็บโหลดเสร็จ
+        document.addEventListener('DOMContentLoaded', fetchSubmissions);
+    </script>
 </body>
 </html>
