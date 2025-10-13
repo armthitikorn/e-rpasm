@@ -130,7 +130,7 @@
       }
 
       let query = supabase
-        .from('voice_answers') 
+        .from('submissions') 
         .select('created_at, user_id, question_number, audio_url')
         .order('created_at', { ascending: false });
 
