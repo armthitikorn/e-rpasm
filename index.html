@@ -55,7 +55,8 @@
 
 <script type="module">
     import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
-    import { v4 as uuidv4 } from 'https://cdn.jsdelivr.com/npm/uuid@8.3.2/dist/esm-browser/index.js';
+    // ✅ แก้ไข CDN จาก jsdelivr เป็น unpkg แล้ว
+    import { v4 as uuidv4 } from 'https://unpkg.com/uuid@8.3.2/dist/esm-browser/index.js'; 
 
     // ** CONFIGURATION **
     const supabaseUrl = 'https://wzwyotzzxycqfwercakh.supabase.co';
@@ -73,7 +74,20 @@
     const testSection = document.getElementById('test-section');
     
     // Global variables สำหรับแบบทดสอบ
-    const questions = { /* ... (คำถามทั้งหมดของคุณ) */ };
+    const questions = {
+        part1: [
+            { text: "ขอโทษครับ/ค่ะ ไม่สนใจต้นสาย" },
+            { text: "มิจฉาชีพหรือป่าว" }
+        ],
+        part2: [
+            { text: "ประกันสุขภาพครอบคลุมโรคเรื้อรังหรือไม่?" },
+            { text: "ซื้อไว้หมดทุกตัวแล้ว" }
+        ],
+        part3: [
+            { text: "คิดว่าแพงเกินไปครับ/ค่ะ" },
+            { text: "รอเงินเดือนออกก่อน" }
+        ]
+    }; // ต้องเพิ่มคำถามทั้งหมดของคุณที่นี่
     let currentPart = "part1";
     let shuffledQuestions = [];
     let currentIndex = 0;
@@ -118,7 +132,6 @@
     signUpBtn.onclick = async () => {
         const email = emailInput.value;
         const password = passwordInput.value;
-        // หากต้องการให้มีการยืนยันอีเมล ให้ตรวจสอบการตั้งค่า Supabase
         const { data, error } = await supabase.auth.signUp({ email, password });
 
         if (error) {
@@ -151,10 +164,10 @@
     async function loadUserAudioDashboard() {
       const container = document.getElementById('audio-list-container');
       const message = document.getElementById('dashboard-message');
-      container.innerHTML = ''; // ล้างเนื้อหาเดิม
+      container.innerHTML = ''; 
       message.textContent = '... กำลังโหลดข้อมูล ...';
 
-      // 1. ตรวจสอบสถานะการล็อกอินอีกครั้ง
+      // 1. ตรวจสอบสถานะการล็อกอิน
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
           message.textContent = 'กรุณาเข้าสู่ระบบเพื่อดูรายงานผล (RLS ต้องใช้สถานะ authenticated)';
@@ -162,7 +175,7 @@
       }
       
       // 2. ดึงข้อมูลจากตาราง 'voice_answers'
-      // RLS Policy จะกรองข้อมูลให้เหลือเฉพาะของผู้ใช้ที่ล็อกอินอยู่ (auth.uid() == user_id)
+      // RLS Policy ที่คุณตั้งไว้จะกรองข้อมูลให้เหลือเฉพาะของผู้ใช้ที่ล็อกอินอยู่ 
       const { 
         data: audioRecords, 
         error 
@@ -214,13 +227,89 @@
     // QUIZ/RECORDING LOGIC (ย่อ)
     // ------------------------------------------
 
-    function shuffle(array) { /* ... (โค้ด shuffle) ... */ }
-    window.startPart = function(partName) { /* ... (โค้ด startPart) ... */ }
-    function getSectionTitle(part) { /* ... (โค้ด getSectionTitle) ... */ }
-    function loadQuestion() { /* ... (โค้ด loadQuestion) ... */ }
-    window.nextQuestion = function() { /* ... (โค้ด nextQuestion) ... */ }
-    window.startRecording = async function() { /* ... (โค้ด startRecording) ... */ }
-    window.stopRecording = function() { /* ... (โค้ด stopRecording) ... */ }
+    function shuffle(array) {
+        let shuffled = [...array];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        return shuffled;
+    }
+
+    window.startPart = function(partName) {
+        currentPart = partName;
+        shuffledQuestions = shuffle(questions[partName]);
+        currentIndex = 0;
+        loadQuestion();
+    }
+
+    function getSectionTitle(part) {
+        switch (part) {
+            case "part1": return "ส่วนที่ 1: โน้มน้าวเมื่อลูกค้าปฏิเสธต้นสาย";
+            case "part2": return "ส่วนที่ 2: ตอบคำถามแก้ไขความกังวลเรื่องความคุ้มครอง";
+            case "part3": return "ส่วนที่ 3: โน้มน้าวหลังปิดการขาย";
+            default: return "";
+        }
+    }
+
+    function loadQuestion() {
+        const q = shuffledQuestions[currentIndex];
+        document.getElementById("section-title").textContent = getSectionTitle(currentPart);
+        document.getElementById("question-text").textContent = q.text;
+        document.getElementById("employee-response").src = "";
+        document.getElementById("download-link").href = "#";
+    }
+
+    window.nextQuestion = function() {
+        // ต้องเพิ่มโค้ดที่บันทึก URL ไฟล์เสียงลงในตาราง 'voice_answers'
+        currentIndex++;
+        if (currentIndex < shuffledQuestions.length) {
+            loadQuestion();
+        } else {
+            alert("จบคำถามในส่วนนี้แล้ว กรุณาเลือกส่วนถัดไป");
+        }
+    }
+
+    window.startRecording = async function() {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream);
+        mediaRecorder.start();
+        audioChunks = [];
+
+        mediaRecorder.ondataavailable = event => {
+            audioChunks.push(event.data);
+        };
+
+        mediaRecorder.onstop = async () => {
+            const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+            const audioUrl = URL.createObjectURL(audioBlob);
+            document.getElementById("employee-response").src = audioUrl;
+            document.getElementById("download-link").href = audioUrl;
+
+            // **NOTE:** Logic อัปโหลดนี้ยังใช้ bucket 'responses' และยังไม่ได้ insert ลง 'voice_answers'
+            const filename = `response_${uuidv4()}.webm`;
+            const { error } = await supabase.storage
+                .from('responses') // ควรเปลี่ยนเป็น 'audios'
+                .upload(filename, audioBlob, {
+                    contentType: 'audio/webm',
+                    upsert: true
+                });
+            if (error) {
+                console.error("Upload failed:", error.message);
+                alert("เกิดข้อผิดพลาดในการอัปโหลดเสียง");
+            } else {
+                console.log("Upload success:", filename);
+                // *** สำคัญ: ต้องเพิ่มโค้ด INSERT ลงตาราง voice_answers ตรงนี้ ***
+                // โดยใช้ supabase.storage.getPublicUrl() เพื่อเอา URL มา insert
+            }
+        };
+    }
+
+    window.stopRecording = function() {
+        if (mediaRecorder && mediaRecorder.state !== "inactive") {
+            mediaRecorder.stop();
+        }
+    }
     
     // ตั้งค่าเริ่มต้น
     window.startPart("part1");
