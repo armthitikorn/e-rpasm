@@ -14,36 +14,19 @@
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind6d3lvdHp6eHljcWZ3ZXJjYWtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcwNTg3MTMsImV4cCI6MjA3MjYzNDcxM30.lgiAf9oBUqsaWGb3u_80wuoKAODQHE_lIBxpGumhrno'
     );
 
-    let allQuizResults = [];
-    let allSubjectiveAnswers = [];
-
-    async function fetchAllDataOnce() {
-        try {
-            const { data: quizResults, error: quizError } = await supabase.from("quiz_results").select("*");
-            const { data: subjectiveAnswers, error: subError } = await supabase.from("subjective_answers").select("*");
-
-            if (quizError || subError) {
-                console.error("Supabase Error:", quizError || subError);
-                return;
-            }
-            
-            allQuizResults = quizResults;
-            allSubjectiveAnswers = subjectiveAnswers;
-            fetchData();
-        } catch (e) {
-            console.error("Network or API Error:", e);
-        }
-    }
-
     async function fetchData() {
       const email = document.getElementById("emailInput").value.trim();
       const date = document.getElementById("dateInput").value.trim();
 
-      const filteredQuiz = allQuizResults.filter(r =>
+      // ดึงข้อมูลทั้งหมด รวมถึงคอลัมน์ 'name' (โครงสร้างเดิม)
+      const { data: quizResults } = await supabase.from("quiz_results").select("*");
+      const { data: subjectiveAnswers } = await supabase.from("subjective_answers").select("*");
+
+      const filteredQuiz = quizResults.filter(r =>
         (!email || r.user_email.includes(email)) &&
         (!date || r.created_at.startsWith(date))
       );
-      const filteredSubjective = allSubjectiveAnswers.filter(r =>
+      const filteredSubjective = subjectiveAnswers.filter(r =>
         (!email || r.user_email.includes(email)) &&
         (!date || r.created_at.startsWith(date))
       );
@@ -52,6 +35,7 @@
       renderChart(filteredQuiz);
     }
 
+    // ฟังก์ชันนี้ถูกปรับปรุงให้ดึงคอลัมน์ 'name' มาแสดง (โครงสร้างเดิม)
     function renderTables(quizData, subjectiveData) {
       const quizTable = document.getElementById("quizTableBody");
       const subjectiveTable = document.getElementById("subjectiveTableBody");
@@ -60,20 +44,23 @@
 
       quizData.forEach((r, i) => {
         const row = document.createElement("tr");
-        row.innerHTML = `<td>${i + 1}</td><td>${r.name || 'N/A'}</td><td>${r.user_email}</td><td>${r.score}</td><td>${r.total_questions}</td><td>${r.created_at.substring(0, 10)}</td>`;
+        // ใช้ r.name || 'N/A' เพื่อจัดการกับแถวข้อมูลเก่าที่อาจยังไม่มีชื่อ
+        // **ใช้ r.created_at เต็มๆ เหมือนโค้ดเดิม**
+        row.innerHTML = `<td>${i + 1}</td><td>${r.name || 'N/A'}</td><td>${r.user_email}</td><td>${r.score}</td><td>${r.total_questions}</td><td>${r.created_at}</td>`;
         quizTable.appendChild(row);
       });
 
       subjectiveData.forEach((r, i) => {
         const row = document.createElement("tr");
-        row.innerHTML = `<td>${i + 1}</td><td>${r.name || 'N/A'}</td><td>${r.user_email}</td><td><pre>${JSON.stringify(r.answers, null, 2)}</pre></td><td>${r.created_at.substring(0, 10)}</td>`;
+        // **ใช้ r.created_at เต็มๆ เหมือนโค้ดเดิม**
+        row.innerHTML = `<td>${i + 1}</td><td>${r.name || 'N/A'}</td><td>${r.user_email}</td><td><pre>${JSON.stringify(r.answers, null, 2)}</pre></td><td>${r.created_at}</td>`;
         subjectiveTable.appendChild(row);
       });
     }
 
     function renderChart(data) {
       const ctx = document.getElementById("scoreChart").getContext("2d");
-      const labels = data.map(r => r.name || r.user_email); 
+      const labels = data.map(r => r.user_email); // **ใช้ user_email เป็น label เหมือนโค้ดเดิม**
       const scores = data.map(r => r.score);
       if (window.scoreChartInstance) window.scoreChartInstance.destroy();
       window.scoreChartInstance = new Chart(ctx, {
@@ -83,8 +70,8 @@
           datasets: [{
             label: "คะแนนรวม",
             data: scores,
-            backgroundColor: "#007acc",
-             borderRadius: 4
+            backgroundColor: "#007acc", // ปรับสีให้เข้ากับ Modern Style
+             borderRadius: 4 // เพิ่มขอบมน
           }]
         },
         options: {
@@ -96,11 +83,11 @@
             y: { beginAtZero: true, grid: { color: 'rgba(0, 0, 0, 0.05)' } },
              x: { grid: { display: false } }
           },
-            plugins: {
-                legend: { display: false }
-            },
-            responsive: true,
-            maintainAspectRatio: false
+             plugins: {
+                 legend: { display: false } // ซ่อน Legend
+             },
+             responsive: true,
+             maintainAspectRatio: false
         }
       });
     }
@@ -123,13 +110,15 @@
       document.getElementById("searchBtn").addEventListener("click", fetchData);
       document.getElementById("downloadExcelBtn").addEventListener("click", downloadExcel);
       document.getElementById("downloadPDFBtn").addEventListener("click", downloadPDF);
-      fetchAllDataOnce();
     });
   </script>
   <style>
-    :root {
+    /* ------------------------------------------- */
+    /* MODERN STYLES (ปรับจากโค้ดเดิมให้สวยขึ้น) */
+    /* ------------------------------------------- */
+     :root {
          --primary-color: #007acc;
-         --background-color: #eef2f7;
+         --background-color: #f4f7f9;
          --card-background: #ffffff;
          --text-color: #333;
      }
@@ -139,7 +128,7 @@
       background: var(--background-color);
       margin: 0;
       padding: 20px;
-      color: var(--text-color);
+      color: var(--text-color);
     }
     
     #dashboard {
@@ -150,103 +139,94 @@
     h2 {
       text-align: center;
       color: var(--primary-color);
-      margin-bottom: 20px;
+      margin-bottom: 30px;
       font-size: 2rem;
+      font-weight: 700;
     }
     
     h3 {
-        color: var(--primary-color);
-        margin-top: 30px;
-        margin-bottom: 15px;
-        border-left: 5px solid var(--primary-color);
-        padding-left: 10px;
-        font-weight: 600;
+         border-left: 5px solid var(--primary-color);
+         padding-left: 15px;
+         margin-top: 40px;
+         margin-bottom: 20px;
+         color: var(--text-color);
+         font-size: 1.5rem;
+         font-weight: 600;
     }
 
     .search-box {
       display: flex;
-      flex-wrap: wrap;
       gap: 15px;
       margin-bottom: 30px;
       justify-content: center;
       padding: 20px;
       background: var(--card-background);
       border-radius: 10px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08); 
     }
 
-    input[type="text"],
-    input[type="date"] {
-      padding: 12px 15px;
+    input, button {
+      padding: 12px 15px; /* ปรับขนาดปุ่ม/input ให้ดูดีขึ้น */
       font-size: 1rem;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      background: var(--card-background);
-      transition: all 0.3s ease;
     }
+    
+    input {
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      flex-grow: 1; 
+      max-width: 300px;
+      transition: border-color 0.3s ease;
+    }
+    
+    input:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 5px rgba(0, 122, 204, 0.3);
+        outline: none;
+    }
 
-    input:focus {
-      border-color: var(--primary-color);
-      outline: none;
-      box-shadow: 0 0 5px rgba(0, 122, 204, 0.4);
-    }
+    button {
+         background-color: var(--primary-color);
+         color: white;
+         border: none;
+         border-radius: 6px;
+         cursor: pointer;
+         box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+         transition: all 0.3s ease;
+    }
+    
+    button:hover {
+        background-color: #005fa3;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
 
-    button {
-      padding: 12px 25px;
-      font-size: 1rem;
-      background: var(--primary-color);
-      color: white;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      box-shadow: 0 3px 6px rgba(0,0,0,0.15);
-      transition: all 0.3s ease;
-    }
-
-    button:hover {
-      background: #005f99;
-      transform: translateY(-1px);
-      box-shadow: 0 5px 10px rgba(0,0,0,0.15);
-    }
-
-    .btn-group {
-      display: flex;
-      gap: 15px;
-      justify-content: center;
-      margin-bottom: 30px;
-      flex-wrap: wrap;
-    }
 
     table {
       width: 100%;
-      border-collapse: separate;
+      border-collapse: separate; /* เพื่อให้ใช้ border-radius ได้ */
       border-spacing: 0;
       margin-bottom: 30px;
       background: var(--card-background);
-      border-radius: 10px;
-      overflow: hidden;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+      border-radius: 10px;
+      overflow: hidden; 
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
     }
 
     th, td {
-      border-bottom: 1px solid #eee;
+      border: none; /* ลบเส้นขอบหนา */
+      border-bottom: 1px solid #eee; /* ใช้เส้นบางๆ แทน */
       padding: 12px 15px;
       text-align: left;
     }
     
-    th:last-child, td:last-child {
-        border-right: none;
+    tbody tr:hover {
+        background-color: #f0f7ff;
     }
 
     th {
       background: var(--primary-color);
       color: white;
-      font-weight: 700;
-      text-transform: uppercase;
-    }
-
-    tr:hover {
-      background-color: #f0f7ff;
+      font-weight: 700;
     }
     
     tbody tr:last-child td {
@@ -254,22 +234,29 @@
     }
 
     canvas {
-      /* *** ปรับปรุง: ลดความสูงของกราฟให้เล็กลง (เหลือ 250px) *** */
-      height: 250px !important; 
       max-width: 100%;
+      /* **ใช้ความสูงเดิม 100% แต่เพิ่ม Padding/Background ให้ดูดีขึ้น** */
+      height: 100px !important; 
       margin-bottom: 30px;
-      background: var(--card-background);
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+      background: var(--card-background);
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
     }
     
     pre {
         margin: 0;
-        white-space: pre-wrap;
+        white-space: pre-wrap; /* จัดการข้อความยาว */
     }
 
-    @media (max-width: 768px) {
+    .btn-group {
+      display: flex;
+      gap: 15px;
+      justify-content: center;
+      margin-bottom: 30px;
+    }
+    
+    @media (max-width: 600px) {
       .search-box, .btn-group {
         flex-direction: column;
         align-items: stretch;
@@ -293,19 +280,18 @@
       <button id="downloadExcelBtn">ดาวน์โหลด Excel</button>
       <button id="downloadPDFBtn">ดาวน์โหลด PDF</button>
     </div>
-        <canvas id="scoreChart" height="250"></canvas>
+    <canvas id="scoreChart" height="100"></canvas>
     <h3>ตารางสรุปคะแนน (ข้อสอบปรนัย)</h3>
     <table id="quizTable">
       <thead>
-        <tr><th>#</th><th>ชื่อผู้ทำแบบทดสอบ</th><th>อีเมล</th><th>คะแนน</th><th>จำนวนข้อ</th><th>วันที่ทำแบบทดสอบ</th></tr>
+                <tr><th>#</th><th>ชื่อผู้ทำแบบทดสอบ</th><th>อีเมล</th><th>คะแนน</th><th>จำนวนข้อ</th><th>วันที่ทำแบบทดสอบ</th></tr>
       </thead>
       <tbody id="quizTableBody"></tbody>
     </table>
-
     <h3>ตารางคำตอบ (ข้อสอบอัตนัย)</h3>
     <table id="subjectiveTable">
       <thead>
-        <tr><th>#</th><th>ชื่อผู้ทำแบบทดสอบ</th><th>อีเมล</th><th>คำตอบ</th><th>วันที่ทำแบบทดสอบ</th></tr>
+                <tr><th>#</th><th>ชื่อผู้ทำแบบทดสอบ</th><th>อีเมล</th><th>คำตอบ</th><th>วันที่ทำแบบทดสอบ</th></tr>
       </thead>
       <tbody id="subjectiveTableBody"></tbody>
     </table>
