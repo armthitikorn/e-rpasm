@@ -14,61 +14,33 @@
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind6d3lvdHp6eHljcWZ3ZXJjYWtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcwNTg3MTMsImV4cCI6MjA3MjYzNDcxM30.lgiAf9oBUqsaWGb3u_80wuoKAODQHE_lIBxpGumhrno'
     );
 
-    // เก็บข้อมูลทั้งหมดที่ดึงมาไว้ในตัวแปร Global เพื่อลดการเรียก API ซ้ำ
-    let allQuizResults = [];
-    let allSubjectiveAnswers = [];
+    async function fetchData() {
+      const email = document.getElementById("emailInput").value.trim();
+      const date = document.getElementById("dateInput").value.trim();
 
-    async function fetchAllDataOnce() {
-        // ดึงข้อมูลทั้งหมดมาเก็บไว้ในตัวแปร Global
-        const { data: quizResults, error: quizError } = await supabase.from("quiz_results").select("*");
-        const { data: subjectiveAnswers, error: subError } = await supabase.from("subjective_answers").select("*");
+      // ดึงข้อมูลทั้งหมด รวมถึงคอลัมน์ 'name'
+      const { data: quizResults, error: quizError } = await supabase.from("quiz_results").select("*");
+      const { data: subjectiveAnswers, error: subError } = await supabase.from("subjective_answers").select("*");
+      
+      if (quizError || subError) {
+          console.error("Fetch Error:", quizError || subError);
+          // ไม่แสดง alert เพื่อไม่ให้รบกวน UX มากเกินไป แต่บันทึก error ไว้
+      }
 
-        if (quizError || subError) {
-             console.error("Fetch Error:", quizError || subError);
-             alert("เกิดข้อผิดพลาดในการดึงข้อมูล: " + (quizError?.message || subError?.message));
-             return;
-        }
+      const filteredQuiz = quizResults.filter(r =>
+        (!email || r.user_email.includes(email)) &&
+        (!date || r.created_at.startsWith(date))
+      );
+      const filteredSubjective = subjectiveAnswers.filter(r =>
+        (!email || r.user_email.includes(email)) &&
+        (!date || r.created_at.startsWith(date))
+      );
 
-        allQuizResults = quizResults;
-        allSubjectiveAnswers = subjectiveAnswers;
-        
-        // เมื่อดึงมาครบแล้ว ให้ทำการแสดงผลทันที
-        filterAndRender(); 
-    }
+      renderTables(filteredQuiz, filteredSubjective);
+      renderChart(filteredQuiz);
+    }
 
-    async function fetchData() {
-        // เมื่อมีการค้นหา/กรอง ให้ใช้ฟังก์ชันนี้
-        filterAndRender();
-    }
-    
-    function filterAndRender() {
-        // แสดง Loader
-        document.getElementById("loader").style.display = 'flex';
-        document.getElementById("dashboardContent").style.opacity = '0.3';
-
-        // หน่วงเวลาเล็กน้อยเพื่อให้ Animation รัน (และให้ผู้ใช้รู้สึกว่ากำลังโหลด)
-        setTimeout(() => {
-            const email = document.getElementById("emailInput").value.trim();
-            const date = document.getElementById("dateInput").value.trim();
-
-            const filteredQuiz = allQuizResults.filter(r =>
-                (!email || r.user_email.includes(email)) &&
-                (!date || r.created_at.startsWith(date))
-            );
-            const filteredSubjective = allSubjectiveAnswers.filter(r =>
-                (!email || r.user_email.includes(email)) &&
-                (!date || r.created_at.startsWith(date))
-            );
-
-            renderTables(filteredQuiz, filteredSubjective);
-            renderChart(filteredQuiz);
-
-            // ซ่อน Loader
-            document.getElementById("loader").style.display = 'none';
-            document.getElementById("dashboardContent").style.opacity = '1';
-        }, 300); // หน่วงเวลา 300ms 
-    }
-
+    // ฟังก์ชันนี้ถูกปรับปรุงให้ดึงคอลัมน์ 'name' มาแสดง
     function renderTables(quizData, subjectiveData) {
       const quizTable = document.getElementById("quizTableBody");
       const subjectiveTable = document.getElementById("subjectiveTableBody");
@@ -77,12 +49,14 @@
 
       quizData.forEach((r, i) => {
         const row = document.createElement("tr");
+        // แสดง r.name (สำหรับ quiz_results)
         row.innerHTML = `<td>${i + 1}</td><td>${r.name || 'N/A'}</td><td>${r.user_email}</td><td>${r.score}</td><td>${r.total_questions}</td><td>${r.created_at.substring(0, 10)}</td>`;
         quizTable.appendChild(row);
       });
 
       subjectiveData.forEach((r, i) => {
         const row = document.createElement("tr");
+        // แสดง r.name (สำหรับ subjective_answers)
         row.innerHTML = `<td>${i + 1}</td><td>${r.name || 'N/A'}</td><td>${r.user_email}</td><td><pre>${JSON.stringify(r.answers, null, 2)}</pre></td><td>${r.created_at.substring(0, 10)}</td>`;
         subjectiveTable.appendChild(row);
       });
@@ -90,7 +64,8 @@
 
     function renderChart(data) {
       const ctx = document.getElementById("scoreChart").getContext("2d");
-      const labels = data.map(r => r.name || r.user_email); 
+      // ใช้ชื่อแทนอีเมลในกราฟเพื่อให้ดูน่าสนใจขึ้น
+      const labels = data.map(r => r.name || r.user_email);
       const scores = data.map(r => r.score);
       if (window.scoreChartInstance) window.scoreChartInstance.destroy();
       window.scoreChartInstance = new Chart(ctx, {
@@ -100,8 +75,8 @@
           datasets: [{
             label: "คะแนนรวม",
             data: scores,
-            backgroundColor: "#007acc", 
-            borderRadius: 4,
+            backgroundColor: "#007acc", // เปลี่ยนเป็นสีแบรนด์ชัดๆ
+             borderRadius: 4,
              hoverBackgroundColor: "#005fa3" 
           }]
         },
@@ -133,7 +108,7 @@
     }
 
     function downloadPDF() {
-      const element = document.getElementById("dashboardContent");
+      const element = document.getElementById("dashboard");
       html2pdf().from(element).save("ผลการสอบ.pdf");
     }
 
@@ -141,12 +116,12 @@
       document.getElementById("searchBtn").addEventListener("click", fetchData);
       document.getElementById("downloadExcelBtn").addEventListener("click", downloadExcel);
       document.getElementById("downloadPDFBtn").addEventListener("click", downloadPDF);
-       fetchAllDataOnce(); // ดึงข้อมูลทั้งหมดเพียงครั้งเดียวเมื่อโหลดหน้า
+      fetchData(); // ดึงข้อมูลครั้งแรกเมื่อโหลด
     });
   </script>
   <style>
     /* ------------------------------------------- */
-    /* MODERN STYLES & ANIMATION */
+    /* MODERN STYLES */
     /* ------------------------------------------- */
      :root {
          --primary-color: #007acc;
@@ -154,189 +129,168 @@
          --card-background: #ffffff;
          --text-color: #333;
      }
+
+    body {
+      font-family: 'Sarabun', sans-serif;
+      background: var(--background-color);
+      margin: 0;
+      padding: 20px;
+      color: var(--text-color);
+    }
     
-     body {
-         font-family: 'Sarabun', sans-serif;
-         background: var(--background-color);
-         margin: 0;
-         padding: 0;
-         color: var(--text-color);
-     }
-
-     #dashboardContent {
+    #dashboard {
         max-width: 1200px;
-        margin: 40px auto;
+        margin: 0 auto;
         padding: 0 20px;
-        transition: opacity 0.3s ease; /* เพิ่ม Animation เมื่อโหลด */
-     }
+    }
 
-     h2 {
-         text-align: center;
-         color: var(--primary-color);
-         margin-bottom: 30px;
-         font-size: 2.2rem;
-         font-weight: 700;
-         letter-spacing: 0.5px;
-     }
-     
-     h3 {
+    h2 {
+      text-align: center;
+      color: var(--primary-color);
+      margin-bottom: 30px;
+      font-size: 2rem;
+      font-weight: 700;
+    }
+    
+    h3 {
          border-left: 5px solid var(--primary-color);
          padding-left: 15px;
          margin-top: 40px;
          margin-bottom: 20px;
          color: var(--text-color);
-     }
+         font-size: 1.5rem;
+         font-weight: 600;
+    }
 
-     .search-box {
-         display: flex;
-         gap: 15px;
-         margin-bottom: 30px;
-         justify-content: center;
-         align-items: center;
-         background: var(--card-background);
-         padding: 20px;
-         border-radius: 10px;
-         box-shadow: 0 4px 12px rgba(0,0,0,0.08); 
-     }
+    .search-box {
+      display: flex;
+      gap: 15px; /* เพิ่มระยะห่าง */
+      margin-bottom: 30px;
+      justify-content: center;
+      padding: 20px;
+      background: var(--card-background);
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08); /* Soft Shadow */
+    }
 
-     input[type="text"], input[type="date"], .btn {
-         padding: 12px 15px;
+    input[type="text"], input[type="date"] {
+      padding: 12px 15px;
+      font-size: 1rem;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      flex-grow: 1; /* ให้ input ขยายตัว */
+      max-width: 300px;
+      transition: border-color 0.3s ease;
+    }
+    
+    input:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 5px rgba(0, 122, 204, 0.3);
+        outline: none;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 15px;
+      justify-content: center;
+      margin-bottom: 40px;
+    }
+    
+    .btn, #searchBtn { /* ใช้คลาส btn สำหรับปุ่มทั้งหมดเพื่อสไตล์เดียวกัน */
+         padding: 12px 25px;
          font-size: 1rem;
-         border-radius: 6px;
-         border: 1px solid #ddd;
-         transition: all 0.3s ease; 
-     }
-
-     input:focus {
-         border-color: var(--primary-color);
-         box-shadow: 0 0 5px rgba(0, 122, 204, 0.5);
-         outline: none;
-     }
-     
-     .btn-group {
-         display: flex;
-         gap: 15px;
-         justify-content: center;
-         margin-bottom: 40px;
-     }
-
-     .btn {
          background-color: var(--primary-color);
          color: white;
          border: none;
+         border-radius: 6px;
          cursor: pointer;
          box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-     }
-     
-     .btn:hover {
-         background-color: #005fa3; 
-         transform: translateY(-2px); 
-         box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-     }
+         transition: all 0.3s ease; /* Animation */
+    }
+    
+    .btn:hover, #searchBtn:hover {
+        background-color: #005fa3;
+        transform: translateY(-2px); /* Subtle lift */
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    
+    /* Chart Styles */
+    canvas {
+      height: 350px !important; /* ปรับขนาดให้เล็กลงแต่ดูดี */
+      max-width: 100%;
+      margin-bottom: 40px;
+      background: var(--card-background);
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    
+    /* Table Styles */
+    table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      margin-bottom: 30px;
+      background: var(--card-background);
+      border-radius: 10px;
+      overflow: hidden; 
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
 
-     /* Chart Section: ปรับความสูงให้เล็กลง */
-     #scoreChart {
-         height: 300px; /* ลดจาก 400px เป็น 300px */
-         background: var(--card-background);
-         padding: 20px;
-         border-radius: 10px;
-         box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-     }
+    th, td {
+      border: none; /* ลบเส้นขอบหนา */
+      padding: 12px 15px;
+      text-align: left;
+      border-bottom: 1px solid #eee; /* ใช้เส้นบางๆ แทน */
+      transition: background-color 0.3s ease;
+    }
 
-     /* Table Section */
-     table {
-         width: 100%;
-         border-collapse: separate; 
-         border-spacing: 0;
-         margin-bottom: 30px;
-         background: var(--card-background);
-         border-radius: 10px;
-         overflow: hidden; 
-         box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-     }
-     
-     th, td {
-         border: none;
-         padding: 12px 15px;
-         text-align: left;
-         border-bottom: 1px solid #eee; 
-         transition: background-color 0.3s ease;
-     }
-     
-     th {
-         background: var(--primary-color);
-         color: white;
-         font-weight: 700;
-         text-transform: uppercase;
-         letter-spacing: 0.5px;
-     }
+    th {
+      background: var(--primary-color);
+      color: white;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
 
-     tbody tr:last-child td {
+    tbody tr:hover {
+        background-color: #f0f7ff; /* Hover effect */
+    }
+    
+    tbody tr:last-child td {
         border-bottom: none;
-     }
-
-     tbody tr:hover {
-        background-color: #f0f7ff; 
-     }
-
-     /* Loader Animation */
-     .loader-overlay {
-         position: fixed;
-         top: 0;
-         left: 0;
-         width: 100%;
-         height: 100%;
-         background: rgba(255, 255, 255, 0.8);
-         display: none;
-         justify-content: center;
-         align-items: center;
-         z-index: 1000;
-     }
-     .spinner {
-         border: 6px solid #f3f3f3;
-         border-top: 6px solid var(--primary-color);
-         border-radius: 50%;
-         width: 40px;
-         height: 40px;
-         animation: spin 1s linear infinite;
-     }
-
-     @keyframes spin {
-         0% { transform: rotate(0deg); }
-         100% { transform: rotate(360deg); }
-     }
+    }
+    
+    pre {
+        margin: 0;
+        padding: 0;
+        white-space: pre-wrap; /* จัดการข้อความยาวในช่องคำตอบ */
+    }
   </style>
 </head>
 <body>
-    <div class="loader-overlay" id="loader">
-        <div class="spinner"></div>
-    </div>
-    
-  <div id="dashboardContent">
+  <div id="dashboard">
     <h2>แดชบอร์ดผลการสอบ</h2>
     <div class="search-box">
       <input type="text" id="emailInput" placeholder="ค้นหาอีเมลพนักงาน">
       <input type="date" id="dateInput">
-      <button id="searchBtn" class="btn">ค้นหา</button>
+      <button id="searchBtn">ค้นหา</button>
     </div>
     <div class="btn-group">
       <button id="downloadExcelBtn" class="btn">ดาวน์โหลด Excel</button>
       <button id="downloadPDFBtn" class="btn">ดาวน์โหลด PDF</button>
     </div>
-        <canvas id="scoreChart" height="300"></canvas>
-    
+    <canvas id="scoreChart" height="350"></canvas>
     <h3>ตารางสรุปคะแนน (ข้อสอบปรนัย)</h3>
     <table id="quizTable">
       <thead>
-        <tr><th>#</th><th>ชื่อผู้ทำแบบทดสอบ</th><th>อีเมล</th><th>คะแนน</th><th>จำนวนข้อ</th><th>วันที่ทำ</th></tr>
+        <tr><th>#</th><th>ชื่อผู้ทำแบบทดสอบ</th><th>อีเมล</th><th>คะแนน</th><th>จำนวนข้อ</th><th>วันที่ทำแบบทดสอบ</th></tr>
       </thead>
       <tbody id="quizTableBody"></tbody>
     </table>
-    
     <h3>ตารางคำตอบ (ข้อสอบอัตนัย)</h3>
     <table id="subjectiveTable">
       <thead>
-        <tr><th>#</th><th>ชื่อผู้ทำแบบทดสอบ</th><th>อีเมล</th><th>คำตอบ</th><th>วันที่ทำ</th></tr>
+        <tr><th>#</th><th>ชื่อผู้ทำแบบทดสอบ</th><th>อีเมล</th><th>คำตอบ</th><th>วันที่ทำแบบทดสอบ</th></tr>
       </thead>
       <tbody id="subjectiveTableBody"></tbody>
     </table>
