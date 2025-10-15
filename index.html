@@ -1,225 +1,33 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Dashboard | ตรวจสอบไฟล์เสียงจาก Supabase</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet"/>
-  <style>
-    body { background: #f8f9fa; padding: 20px; font-family: 'Segoe UI', sans-serif; }
-    .container { max-width: 1300px; }
-    .table th { background-color: #343a40; color: white; }
-    .url-cell { max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    #modalAudioPlayer { width: 100%; height: 50px; }
-  </style>
+<meta charset="UTF-8">
+<title>แดชบอร์ดผลการสอบ</title>
+<style>
+body { font-family: 'Sarabun', sans-serif; background: #f4f6f8; padding: 20px; }
+h1 { text-align: center; color: #2c3e50; }
+table { width: 100%; border-collapse: collapse; margin-top: 20px; background: #fff; }
+th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
+th { background: #007acc; color: white; }
+tr:nth-child(even) { background: #f9f9f9; }
+.section { margin-top: 40px; }
+</style>
 </head>
 <body>
-  <div class="container">
-    <div class="card p-4 mb-4">
-      <h1 class="text-center text-primary"><i class="bi bi-folder-fill me-2"></i> ตรวจสอบไฟล์เสียงจาก Supabase</h1>
-      <div class="row mb-3">
-        <div class="col-md-4">
-          <label for="filterDate" class="form-label fw-bold">เลือกวันที่:</label>
-          <input type="date" class="form-control" id="filterDate" required>
-        </div>
-        <div class="col-md-8 d-flex align-items-end">
-          <button class="btn btn-primary w-100" onclick="fetchAudioFiles()">ค้นหาไฟล์เสียง</button>
-        </div>
-      </div>
-      <div id="loadingStatus" class="alert alert-info text-center" style="display:none;">
-        <span class="spinner-border spinner-border-sm me-2"></span> กำลังโหลดข้อมูล...
-      </div>
-      <div id="initialMessage" class="alert alert-secondary text-center">กรุณาเลือกวันที่เพื่อเริ่มค้นหา</div>
-      <div id="noDataMessage" class="alert alert-warning text-center" style="display:none;">ไม่พบไฟล์เสียงในวันที่เลือก</div>
-    </div>
+<h1>แดชบอร์ดผลการสอบ</h1>
+<div class="section">
+<h2>ข้อสอบปรนัย (50 ข้อ)</h2>
+<table>
+<tr><th>ข้อ</th><th>คำถาม</th><th>คำตอบที่ถูกต้อง</th></tr>
 
-    <div class="card p-4" id="tableSection" style="display:none;">
-      <h4 class="mb-3">ผลลัพธ์วันที่ <span id="selectedDateDisplay"></span></h4>
-      <div class="table-responsive">
-        <table class="table table-hover table-striped">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>ชื่อไฟล์</th>
-              <th>User ID</th>
-              <th>Part / ข้อ</th>
-              <th>เวลาอัปโหลด</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody id="submissionsTableBody"></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal เล่นเสียง -->
-  <div class="modal fade" id="audioModal" tabindex="-1">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header bg-primary text-white">
-          <h5 class="modal-title"><i class="bi bi-headset me-2"></i> เล่นไฟล์เสียง</h5>
-          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body text-center">
-          <p id="modalFilePath" class="text-muted"></p>
-          <audio id="modalAudioPlayer" controls></audio>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  <script type="module">
-    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
-
-    const supabase = createClient(
-      'https://wzwyotzzxycqfwercakh.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind6d3lvdHp6eHljcWZ3ZXJjYWtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcwNTg3MTMsImV4cCI6MjA3MjYzNDcxM30.lgiAf9oBUqsaWGb3u_80wuoKAODQHE_lIBxpGumhrno'
-    );
-    const BUCKET_NAME = 'audios';
-
-    const tableBody = document.getElementById('submissionsTableBody');
-    const loadingStatus = document.getElementById('loadingStatus');
-    const noDataMessage = document.getElementById('noDataMessage');
-    const initialMessage = document.getElementById('initialMessage');
-    const tableSection = document.getElementById('tableSection');
-    const filterDateInput = document.getElementById('filterDate');
-    const selectedDateDisplay = document.getElementById('selectedDateDisplay');
-    const audioModal = new bootstrap.Modal(document.getElementById('audioModal'));
-    const modalAudioPlayer = document.getElementById('modalAudioPlayer');
-    const modalFilePath = document.getElementById('modalFilePath');
-
-    function getPublicFileUrl(path) {
-      return `${supabase.storageUrl}/object/public/${BUCKET_NAME}/${encodeURIComponent(path.trim())}`;
-    }
-
-    window.fetchAudioFiles = async function () {
-      const selectedDate = filterDateInput.value;
-      if (!selectedDate) return alert('กรุณาเลือกวันที่');
-
-      const dateStart = new Date(`${selectedDate}T00:00:00Z`);
-      const dateEnd = new Date(`${selectedDate}T23:59:59Z`);
-
-      initialMessage.style.display = 'none';
-      tableSection.style.display = 'none';
-      noDataMessage.style.display = 'none';
-      loadingStatus.style.display = 'block';
-      tableBody.innerHTML = '';
-
-      try {
-        const { data: rootFolders } = await supabase.storage.from(BUCKET_NAME).list('');
-        const userFolders = rootFolders.filter(f => f.id === null && f.name !== '.emptyFolderPlaceholder');
-
-        let allFiles = [];
-
-        for (const folder of userFolders) {
-          const { data: parts } = await supabase.storage.from(BUCKET_NAME).list(folder.name);
-          for (const part of parts) {
-            if (part.id !== null) continue;
-
-            const partPath = `${folder.name}/${part.name}`;
-            const { data: files } = await supabase.storage.from(BUCKET_NAME).list(partPath);
-
-            const filtered = files
-              .filter(f => f.name.endsWith('.webm') && f.created_at)
-              .map(f => {
-                const created = new Date(f.created_at);
-                if (created >= dateStart && created <= dateEnd) {
-                  return {
-                    name: f.name,
-                    path: `${partPath}/${f.name}`,
-                    user_id: folder.name,
-                    part: part.name,
-                    created_at: f.created_at
-                  };
-                }
-                return null;
-              })
-              .filter(Boolean);
-
-            allFiles.push(...filtered);
-          }
-        }
-
-        loadingStatus.style.display = 'none';
-        selectedDateDisplay.textContent = selectedDate;
-
-        if (allFiles.length === 0) {
-          noDataMessage.style.display = 'block';
-          return;
-        }
-
-        tableSection.style.display = 'block';
-        allFiles.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
-
-        allFiles.forEach((file, index) => {
-          const publicUrl = getPublicFileUrl(file.path);
-          const time = new Date(file.created_at).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
-          const qMatch = file.name.match(/q(\d+)_/i);
-          const qNum = qMatch ? qMatch[1] : 'N/A';
-          const downloadName = `${file.user_id.substring(0, 8)}_${file.part}_Q${qNum}_${selectedDate}.webm`;
-
-          const tr = document.createElement('tr');
-          tr.innerHTML = `
-            <td>${index + 1}</td>
-            <td class="url-cell">${file.name}</td>
-            <td class="url-cell">${file.user_id.substring(0, 8)}...</td>
-            <td>${file.part} / ข้อ ${qNum}</td>
-            <td>${time}</td>
-            <td>
-              <button class="btn btn-sm btn-primary play-btn" data-audio-url="${publicUrl}" data-file-path="${file.path}">
-                <i class="bi bi-play-fill"></i> เล่น
-              </button>
-              <a href="${publicUrl}" download="${downloadName}" class="btn btn-sm btn-success ms-2">
-                <i class="bi bi-download"></i> ดาวน์โหลด
-              </a>
-            </td>
-          `;
-          tableBody.appendChild(tr);
-        });
-        document.querySelectorAll('.play-btn').forEach(btn => {
-          btn.addEventListener('click', e => {
-            modalAudioPlayer.pause();
-            modalAudioPlayer.currentTime = 0;
-
-            const audioUrl = e.currentTarget.getAttribute('data-audio-url');
-            const filePath = e.currentTarget.getAttribute('data-file-path');
-
-            if (audioUrl) {
-              modalAudioPlayer.innerHTML = ''; // เคลียร์ source เดิม
-              const source = document.createElement('source');
-              source.src = audioUrl;
-              source.type = 'audio/webm; codecs=opus'; // ระบุ codec ชัดเจน
-              modalAudioPlayer.appendChild(source);
-
-              modalFilePath.textContent = `Path: ${filePath}`;
-              modalAudioPlayer.load();
-
-              audioModal.show();
-
-              modalAudioPlayer.play().catch(error => {
-                console.error("Auto-play failed:", error);
-                alert("ไม่สามารถเล่นไฟล์เสียงได้: เบราว์เซอร์อาจไม่รองรับ codec หรือไฟล์เสีย");
-              });
-            } else {
-              alert('ไม่พบ URL ไฟล์เสียง');
-            }
-          });
-        });
-      } catch (err) {
-        loadingStatus.style.display = 'none';
-        console.error('เกิดข้อผิดพลาด:', err);
-        alert(`ไม่สามารถโหลดไฟล์จาก Supabase ได้: ${err.message || 'ตรวจสอบชื่อ bucket และสิทธิ์การเข้าถึง'}`);
-      }
-    };
-
-    // โหลดข้อความเริ่มต้นเมื่อเปิดหน้า
-    document.addEventListener('DOMContentLoaded', () => {
-      initialMessage.style.display = 'block';
-      tableSection.style.display = 'none';
-    });
-  </script>
+</table>
+</div>
+<div class="section">
+<h2>ข้อสอบอัตนัย (10 ข้อ)</h2>
+<table>
+<tr><th>ข้อ</th><th>คำถาม</th></tr>
+<tr><td>1</td><td>1. ลูกค้ากังวลเรื่องค่ารักษาพยาบาลสูง คุณจะอธิบายความคุ้มครองอย่างไร?</td></tr><tr><td>2</td><td>2. หากลูกค้าสงสัยว่าประกันสุขภาพคุ้มค่าหรือไม่ คุณจะตอบอย่างไร?</td></tr><tr><td>3</td><td>3. ลูกค้ากังวลว่าจะเคลมไม่ได้ คุณจะสร้างความมั่นใจอย่างไร?</td></tr><tr><td>4</td><td>4. หากลูกค้าบอกว่าไม่มีเวลาอ่านเงื่อนไข คุณจะอธิบายให้เข้าใจง่ายอย่างไร?</td></tr><tr><td>5</td><td>5. ลูกค้ากังวลเรื่องโรคประจำตัว คุณจะนำเสนอแผนประกันอย่างไร?</td></tr><tr><td>6</td><td>6. หากลูกค้ากลัวว่าประกันจะไม่ครอบคลุมตอนจำเป็น คุณจะอธิบายอย่างไร?</td></tr><tr><td>7</td><td>7. ลูกค้ากังวลเรื่องการจ่ายเบี้ยระยะยาว คุณจะเสนอทางเลือกใด?</td></tr><tr><td>8</td><td>8. หากลูกค้าบอกว่าเคยมีประสบการณ์ไม่ดีจากบริษัทประกัน คุณจะรับมืออย่างไร?</td></tr><tr><td>9</td><td>9. ลูกค้ากังวลว่าจะไม่เข้าใจการเคลม คุณจะให้คำแนะนำอย่างไร?</td></tr><tr><td>10</td><td>10. หากลูกค้าบอกว่า “ยังไม่พร้อมตัดสินใจ” คุณจะปิดการขายอย่างไร?</td></tr>
+</table>
+</div>
 </body>
 </html>
