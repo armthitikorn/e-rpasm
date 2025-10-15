@@ -14,19 +14,35 @@
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind6d3lvdHp6eHljcWZ3ZXJjYWtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcwNTg3MTMsImV4cCI6MjA3MjYzNDcxM30.lgiAf9oBUqsaWGb3u_80wuoKAODQHE_lIBxpGumhrno'
     );
 
+    let allQuizResults = [];
+    let allSubjectiveAnswers = [];
+
+    // ดึงข้อมูลครั้งเดียวเมื่อโหลดหน้าจอ
+    async function fetchAllDataOnce() {
+        try {
+            const { data: quizResults } = await supabase.from("quiz_results").select("*");
+            const { data: subjectiveAnswers } = await supabase.from("subjective_answers").select("*");
+            
+            allQuizResults = quizResults || [];
+            allSubjectiveAnswers = subjectiveAnswers || [];
+            
+            fetchData();
+        } catch (e) {
+            console.error("Error fetching initial data:", e);
+        }
+    }
+
+
     async function fetchData() {
       const email = document.getElementById("emailInput").value.trim();
       const date = document.getElementById("dateInput").value.trim();
 
-      // ตรรกะเดิม: ดึงข้อมูลทั้งหมดทุกครั้งที่ค้นหา
-      const { data: quizResults } = await supabase.from("quiz_results").select("*");
-      const { data: subjectiveAnswers } = await supabase.from("subjective_answers").select("*");
-
-      const filteredQuiz = quizResults.filter(r =>
+      // กรองข้อมูลจากชุดข้อมูลที่ถูกเก็บไว้แล้ว
+      const filteredQuiz = allQuizResults.filter(r =>
         (!email || r.user_email.includes(email)) &&
         (!date || r.created_at.startsWith(date))
       );
-      const filteredSubjective = subjectiveAnswers.filter(r =>
+      const filteredSubjective = allSubjectiveAnswers.filter(r =>
         (!email || r.user_email.includes(email)) &&
         (!date || r.created_at.startsWith(date))
       );
@@ -35,7 +51,6 @@
       renderChart(filteredQuiz);
     }
 
-    // ฟังก์ชันเดิม
     function renderTables(quizData, subjectiveData) {
       const quizTable = document.getElementById("quizTableBody");
       const subjectiveTable = document.getElementById("subjectiveTableBody");
@@ -67,12 +82,11 @@
           datasets: [{
             label: "คะแนนรวม",
             data: scores,
-            backgroundColor: "#007acc", // ปรับสีให้ดู Modern
-             borderRadius: 4 // เพิ่มขอบมน
+            backgroundColor: "#007acc",
+             borderRadius: 4
           }]
         },
         options: {
-          // *** นำ Animation ออก ตามความต้องการ ***
           animation: false,
           scales: {
             y: { beginAtZero: true, grid: { color: 'rgba(0, 0, 0, 0.05)' } },
@@ -105,11 +119,12 @@
       document.getElementById("searchBtn").addEventListener("click", fetchData);
       document.getElementById("downloadExcelBtn").addEventListener("click", downloadExcel);
       document.getElementById("downloadPDFBtn").addEventListener("click", downloadPDF);
+      fetchAllDataOnce(); 
     });
   </script>
   <style>
     /* ------------------------------------------- */
-    /* MODERN STYLES (ปรับปรุงความเรียบร้อย) */
+    /* GLOBAL / DESKTOP STYLES */
     /* ------------------------------------------- */
      :root {
          --primary-color: #007acc;
@@ -170,7 +185,7 @@
       border: 1px solid #ddd;
       border-radius: 6px;
       flex-grow: 1; 
-      max-width: 300px;
+      max-width: 300px; /* จำกัดความกว้างบน Desktop */
       transition: border-color 0.3s ease;
     }
     
@@ -196,13 +211,17 @@
         box-shadow: 0 4px 8px rgba(0,0,0,0.2);
     }
 
+    /* **การจัดการตารางเพื่อให้รองรับมือถือ** */
+    .table-container {
+        overflow-x: auto; /* ทำให้ตารางเลื่อนได้แนวนอนบนมือถือ */
+        margin-bottom: 30px;
+    }
 
     table {
+      min-width: 700px; /* กำหนดความกว้างขั้นต่ำของตารางเพื่อให้มีข้อมูลที่กว้างพอจะเลื่อนได้ */
       width: 100%;
-      /* *** ปรับ: ใช้ separate เพื่อให้ใช้ border-radius ได้ *** */
       border-collapse: separate; 
       border-spacing: 0;
-      margin-bottom: 30px;
       background: var(--card-background);
       border-radius: 10px;
       overflow: hidden; 
@@ -210,10 +229,9 @@
     }
 
     th, td {
-      /* *** ปรับ: ลบ border: 1px solid #ccc; *** */
       border: none; 
-      border-bottom: 1px solid #eee; /* ใช้เส้นบางๆ แทน */
-      padding: 12px 15px; /* เพิ่ม Padding */
+      border-bottom: 1px solid #eee; 
+      padding: 12px 15px; 
       text-align: left;
     }
     
@@ -234,7 +252,7 @@
 
     canvas {
       max-width: 100%;
-      height: 100px !important; 
+      height: 160px !important; 
       margin-bottom: 30px;
       background: var(--card-background);
       padding: 20px;
@@ -245,25 +263,48 @@
     pre {
         margin: 0;
         white-space: pre-wrap;
+        font-family: inherit;
     }
 
     .btn-group {
       display: flex;
+      flex-wrap: wrap; /* ทำให้ปุ่มลงบรรทัดเมื่อหน้าจอแคบ */
       gap: 15px;
       justify-content: center;
       margin-bottom: 30px;
     }
     
-    @media (max-width: 600px) {
-      .search-box, .btn-group {
-        flex-direction: column;
-        align-items: stretch;
-      }
+    /* ------------------------------------------- */
+    /* RESPONSIVE MEDIA QUERIES (สำหรับมือถือ) */
+    /* ------------------------------------------- */
+    @media (max-width: 768px) {
+        /* ทำให้ input และปุ่มขยายเต็มความกว้าง */
+        .search-box, .btn-group {
+            flex-direction: column;
+            align-items: stretch;
+            padding: 15px;
+            gap: 10px;
+        }
 
-      button, input {
-        width: 100%;
-      }
-    }
+        input {
+            width: auto;
+            max-width: 100%;
+        }
+
+        button {
+            width: 100%;
+        }
+        
+        /* ลดขนาดตัวอักษรหัวข้อบนมือถือ */
+        h2 { font-size: 1.5rem; }
+        h3 { font-size: 1.2rem; }
+        
+        /* ลบ min-width ของตารางเพื่อให้ปรับตามขนาดหน้าจอได้ ถ้าไม่เลื่อน */
+        table {
+            min-width: unset;
+        }
+    }
+
   </style>
 </head>
 <body>
@@ -278,21 +319,27 @@
       <button id="downloadExcelBtn">ดาวน์โหลด Excel</button>
       <button id="downloadPDFBtn">ดาวน์โหลด PDF</button>
     </div>
-    <canvas id="scoreChart" height="100"></canvas>
+    <canvas id="scoreChart" height="160"></canvas>
+    
     <h3>ตารางสรุปคะแนน (ข้อสอบปรนัย)</h3>
-    <table id="quizTable">
-      <thead>
+    <div class="table-container">
+      <table id="quizTable">
+        <thead>
                 <tr><th>#</th><th>ชื่อผู้ทำแบบทดสอบ</th><th>อีเมล</th><th>คะแนน</th><th>จำนวนข้อ</th><th>วันที่ทำแบบทดสอบ</th></tr>
-      </thead>
-      <tbody id="quizTableBody"></tbody>
-    </table>
+        </thead>
+        <tbody id="quizTableBody"></tbody>
+      </table>
+    </div>
+
     <h3>ตารางคำตอบ (ข้อสอบอัตนัย)</h3>
-    <table id="subjectiveTable">
-      <thead>
+    <div class="table-container">
+      <table id="subjectiveTable">
+        <thead>
                 <tr><th>#</th><th>ชื่อผู้ทำแบบทดสอบ</th><th>อีเมล</th><th>คำตอบ</th><th>วันที่ทำแบบทดสอบ</th></tr>
-      </thead>
-      <tbody id="subjectiveTableBody"></tbody>
-    </table>
+        </thead>
+        <tbody id="subjectiveTableBody"></tbody>
+      </table>
+    </div>
   </div>
 </body>
 </html>
