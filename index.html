@@ -1,267 +1,166 @@
+
 <!DOCTYPE html>
+
 <html lang="th">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>แดชบอร์ดผลการสอบพนักงาน</title>
-  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap" rel="stylesheet">
-  <style>
-    body {
-      font-family: 'Sarabun', sans-serif;
-      background-color: #f4f6f8;
-      color: #333;
-      padding: 30px;
-      max-width: 1200px;
-      margin: auto;
-    }
-    h1 {
-      text-align: center;
-      color: #005fa3;
-      margin-bottom: 40px;
-    }
-    .section {
-      margin-bottom: 50px;
-    }
-    .section h2 {
-      color: #007acc;
-      margin-bottom: 20px;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      background: white;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    }
-    th, td {
-      padding: 12px 15px;
-      border: 1px solid #ddd;
-      text-align: left;
-    }
-    th {
-      background-color: #e6f2ff;
-    }
-    tr:nth-child(even) {
-      background-color: #f9f9f9;
-    }
-    .search-box {
-      margin-bottom: 20px;
-    }
-    .search-box input {
-      padding: 10px;
-      width: 300px;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-    }
-    .chart {
-      margin-top: 30px;
-      text-align: center;
-    }
-    .download-buttons {
-      margin-top: 20px;
-      text-align: right;
-    }
-    .download-buttons button {
-      padding: 10px 20px;
-      margin-left: 10px;
-      background-color: #007acc;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-    .download-buttons button:hover {
-      background-color: #005fa3;
-    }
-  </style>
+<meta charset="utf-8"/>
+<title>แดชบอร์ดผลการสอบ</title>
+<style>
+body { font-family: 'Sarabun', sans-serif; background: #f4f6f8; padding: 20px; }
+h1 { text-align: center; color: #2c3e50; }
+table { width: 100%; border-collapse: collapse; margin-top: 20px; background: #fff; }
+th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
+th { background: #007acc; color: white; }
+tr:nth-child(even) { background: #f9f9f9; }
+.section { margin-top: 40px; }
+</style>
 </head>
 <body>
-  <h1>แดชบอร์ดผลการสอบพนักงาน</h1>
+<h1>แดชบอร์ดผลการสอบ</h1>
+<div class="section">
+<h2>ข้อสอบปรนัย (50 ข้อ)</h2>
+<table>
+<tr><th>ข้อ</th><th>คำถาม</th><th>คำตอบที่ถูกต้อง</th></tr>
+</table>
+</div>
+<div class="section">
+<h2>ข้อสอบอัตนัย (10 ข้อ)</h2>
+<table>
+<tr><th>ข้อ</th><th>คำถาม</th></tr>
+<tr><td>1</td><td>1. ลูกค้ากังวลเรื่องค่ารักษาพยาบาลสูง คุณจะอธิบายความคุ้มครองอย่างไร?</td></tr><tr><td>2</td><td>2. หากลูกค้าสงสัยว่าประกันสุขภาพคุ้มค่าหรือไม่ คุณจะตอบอย่างไร?</td></tr><tr><td>3</td><td>3. ลูกค้ากังวลว่าจะเคลมไม่ได้ คุณจะสร้างความมั่นใจอย่างไร?</td></tr><tr><td>4</td><td>4. หากลูกค้าบอกว่าไม่มีเวลาอ่านเงื่อนไข คุณจะอธิบายให้เข้าใจง่ายอย่างไร?</td></tr><tr><td>5</td><td>5. ลูกค้ากังวลเรื่องโรคประจำตัว คุณจะนำเสนอแผนประกันอย่างไร?</td></tr><tr><td>6</td><td>6. หากลูกค้ากลัวว่าประกันจะไม่ครอบคลุมตอนจำเป็น คุณจะอธิบายอย่างไร?</td></tr><tr><td>7</td><td>7. ลูกค้ากังวลเรื่องการจ่ายเบี้ยระยะยาว คุณจะเสนอทางเลือกใด?</td></tr><tr><td>8</td><td>8. หากลูกค้าบอกว่าเคยมีประสบการณ์ไม่ดีจากบริษัทประกัน คุณจะรับมืออย่างไร?</td></tr><tr><td>9</td><td>9. ลูกค้ากังวลว่าจะไม่เข้าใจการเคลม คุณจะให้คำแนะนำอย่างไร?</td></tr><tr><td>10</td><td>10. หากลูกค้าบอกว่า “ยังไม่พร้อมตัดสินใจ” คุณจะปิดการขายอย่างไร?</td></tr>
+</table>
+</div>
 
-  <div class="section">
-    <h2>📊 สรุปคะแนนรวมจากข้อสอบปรนัย</h2>
-    <div class="search-box">
-      <input type="text" id="search-mcq" placeholder="ค้นหาชื่อพนักงาน...">
-    </div>
-    <table id="mcq-table">
-      <thead>
-        <tr>
-          <th>ชื่อพนักงาน</th>
-          <th>อีเมล</th>
-          <th>คะแนนรวม</th>
-          <th>จำนวนข้อ</th>
-          <th>วันที่ทำแบบทดสอบ</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-    <div class="chart">
-      <canvas id="scoreChart" width="600" height="300"></canvas>
-    </div>
-    <div class="download-buttons">
-      <button onclick="downloadMCQ('excel')">ดาวน์โหลด Excel</button>
-      <button onclick="downloadMCQ('pdf')">ดาวน์โหลด PDF</button>
-    </div>
-  </div>
+<h2>แดชบอร์ดผลการสอบพนักงาน</h2>
+<div style="margin-bottom:20px;">
+<input id="emailInput" placeholder="ค้นหาอีเมลพนักงาน" type="text"/>
+<input id="dateInput" type="date"/>
+<button id="searchBtn">ค้นหา</button>
+</div>
+<canvas height="300" id="scoreChart" style="margin-bottom:30px;" width="600"></canvas>
+<h3>ตารางคะแนนข้อสอบปรนัย</h3>
+<table border="1" cellpadding="8" id="dashboardTable" style="width:100%;margin-bottom:30px;">
+<thead>
+<tr><th>#</th><th>อีเมล</th><th>คะแนน</th><th>จำนวนข้อ</th><th>วันที่ทำแบบทดสอบ</th></tr>
+</thead>
+<tbody id="quizTableBody"></tbody>
+</table>
+<h3>ตารางคำตอบข้อสอบอัตนัย</h3>
+<table border="1" cellpadding="8" style="width:100%;margin-bottom:30px;">
+<thead>
+<tr><th>#</th><th>อีเมล</th><th>วันที่ทำแบบทดสอบ</th><th>คำตอบ</th></tr>
+</thead>
+<tbody id="subjectiveTableBody"></tbody>
+</table>
+<button id="exportExcel">ดาวน์โหลด Excel</button>
+<button id="exportPDF">ดาวน์โหลด PDF</button>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script type="module">
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+import Chart from 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/+esm';
 
-  <div class="section">
-    <h2>📝 คำตอบข้อสอบอัตนัย</h2>
-    <div class="search-box">
-      <input type="text" id="search-subjective" placeholder="ค้นหาชื่อพนักงาน...">
-    </div>
-    <table id="subjective-table">
-      <thead>
-        <tr>
-          <th>ชื่อพนักงาน</th>
-          <th>อีเมล</th>
-          <th>คำตอบ</th>
-          <th>วันที่ทำแบบทดสอบ</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-    <div class="download-buttons">
-      <button onclick="downloadSubjective('excel')">ดาวน์โหลด Excel</button>
-      <button onclick="downloadSubjective('pdf')">ดาวน์โหลด PDF</button>
-    </div>
-  </div>
+const supabaseUrl = 'https://wzwyotzzxycqfwercakh.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind6d3lvdHp6eHljcWZ3ZXJjYWtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcwNTg3MTMsImV4cCI6MjA3MjYzNDcxM30.lgiAf9oBUqsaWGb3u_80wuoKAODQHE_lIBxpGumhrno';
+const supabase = createClient(supabaseUrl, supabaseKey);
 
-  <script type="module">
-    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
-    import jsPDF from 'https://cdn.jsdelivr.net/npm/jspdf@2.5.1/+esm';
-    import autoTable from 'https://cdn.jsdelivr.net/npm/jspdf-autotable@3.5.25/+esm';
-    import { utils, writeFile } from 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/+esm';
+// DOM elements
+const searchBtn = document.getElementById("searchBtn");
+const emailInput = document.getElementById("emailInput");
+const dateInput = document.getElementById("dateInput");
+const quizTableBody = document.getElementById("quizTableBody");
+const subjectiveTableBody = document.getElementById("subjectiveTableBody");
+const chartCanvas = document.getElementById("scoreChart").getContext("2d");
 
-    const supabase = createClient(
-      'https://wzwyotzzxycqfwercakh.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind6d3lvdHp6eHljcWZ3ZXJjYWtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcwNTg3MTMsImV4cCI6MjA3MjYzNDcxM30.lgiAf9oBUqsaWGb3u_80wuoKAODQHE_lIBxpGumhrno'
-    );
+// Search and render dashboard
+searchBtn.addEventListener("click", async () => {
+    const email = emailInput.value.trim();
+    const date = dateInput.value.trim();
 
-    const mcqTableBody = document.querySelector('#mcq-table tbody');
-    const subjectiveTableBody = document.querySelector('#subjective-table tbody');
-    let mcqData = [];
-    let subjectiveData = [];
-
-    async function loadData() {
-      const { data: mcqResults } = await supabase.from('quiz_results').select('*').order('created_at', { ascending: false });
-      const { data: subjectiveResults } = await supabase.from('subjective_answers').select('*').order('created_at', { ascending: false });
-
-      mcqData = mcqResults || [];
-      subjectiveData = subjectiveResults || [];
-
-      renderMCQTable(mcqData);
-      renderSubjectiveTable(subjectiveData);
-      renderChart(mcqData);
+    if (!email && !date) {
+        alert("กรุณากรอกอีเมลหรือวันที่เพื่อค้นหา");
+        return;
     }
 
-    function renderMCQTable(data) {
-      mcqTableBody.innerHTML = '';
-      data.forEach(row => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${row.user_id}</td>
-          <td>${row.user_email}</td>
-          <td>${row.score}</td>
-          <td>${row.total_questions}</td>
-          <td>${new Date(row.created_at).toLocaleString()}</td>
+    // Clear previous results
+    quizTableBody.innerHTML = "";
+    subjectiveTableBody.innerHTML = "";
+
+    // Fetch quiz results
+    const { data: quizResults, error: quizError } = await supabase
+        .from("quiz_results")
+        .select("*")
+        .ilike("user_email", `%${email}%`);
+
+    // Filter by date if provided
+    const filteredQuiz = date ? quizResults.filter(r => r.created_at?.startsWith(date)) : quizResults;
+
+    // Render quiz table
+    filteredQuiz.forEach((r, i) => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+            <td>${i + 1}</td>
+            <td>${r.user_email}</td>
+            <td>${r.score}</td>
+            <td>${r.total_questions}</td>
+            <td>${r.created_at?.split("T")[0]}</td>
         `;
-        mcqTableBody.appendChild(tr);
-      });
-    }
+        quizTableBody.appendChild(row);
+    });
 
-    function renderSubjectiveTable(data) {
-      subjectiveTableBody.innerHTML = '';
-      data.forEach(row => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${row.user_id}</td>
-          <td>${row.user_email}</td>
-          <td><pre>${JSON.stringify(row.answers, null, 2)}</pre></td>
-          <td>${new Date(row.created_at).toLocaleString()}</td>
-        `;
-        subjectiveTableBody.appendChild(tr);
-      });
-    }
-
-    function renderChart(data) {
-      const ctx = document.getElementById('scoreChart').getContext('2d');
-      const labels = data.map(d => d.user_id);
-      const scores = data.map(d => d.score);
-      new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels,
-          datasets: [{
-            label: 'คะแนนรวม',
-            data: scores,
-            backgroundColor: '#007acc'
-          }]
-        },
+    // Render chart
+    const chartData = {
+        labels: filteredQuiz.map(r => r.user_email),
+        datasets: [{
+            label: "คะแนนรวม",
+            data: filteredQuiz.map(r => r.score),
+            backgroundColor: "rgba(0, 122, 204, 0.6)"
+        }]
+    };
+    new Chart(chartCanvas, {
+        type: "bar",
+        data: chartData,
         options: {
-          responsive: true,
-          plugins: {
-            legend: { display: false },
-            title: { display: true, text: 'กราฟสรุปคะแนนรวมของพนักงาน' }
-          }
+            responsive: true,
+            plugins: {
+                legend: { display: false },
+                title: { display: true, text: "กราฟคะแนนรวมของพนักงาน" }
+            }
         }
-      });
-    }
-
-    document.getElementById('search-mcq').addEventListener('input', e => {
-      const keyword = e.target.value.toLowerCase();
-      const filtered = mcqData.filter(d => d.user_id.toLowerCase().includes(keyword));
-      renderMCQTable(filtered);
     });
 
-    document.getElementById('search-subjective').addEventListener('input', e => {
-      const keyword = e.target.value.toLowerCase();
-      const filtered = subjectiveData.filter(d => d.user_id.toLowerCase().includes(keyword));
-      renderSubjectiveTable(filtered);
+    // Fetch subjective answers
+    const { data: subjectiveAnswers, error: subError } = await supabase
+        .from("subjective_answers")
+        .select("*")
+        .ilike("user_email", `%${email}%`);
+
+    const filteredSubjective = date ? subjectiveAnswers.filter(r => r.created_at?.startsWith(date)) : subjectiveAnswers;
+
+    // Render subjective table
+    filteredSubjective.forEach((r, i) => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+            <td>${i + 1}</td>
+            <td>${r.user_email}</td>
+            <td>${r.created_at?.split("T")[0]}</td>
+            <td><pre>${JSON.stringify(r.answers, null, 2)}</pre></td>
+        `;
+        subjectiveTableBody.appendChild(row);
     });
+});
 
-    function downloadMCQ(type) {
-      if (type === 'excel') {
-        const ws = utils.json_to_sheet(mcqData);
-        const wb = utils.book_new();
-        utils.book_append_sheet(wb, ws, 'MCQ Results');
-        writeFile(wb, 'mcq_results.xlsx');
-      } else {
-        const doc = new jsPDF();
-        autoTable(doc, {
-          head: [['ชื่อพนักงาน', 'อีเมล', 'คะแนนรวม', 'จำนวนข้อ', 'วันที่ทำ']],
-          body: mcqData.map(d => [d.user_id, d.user_email, d.score, d.total_questions, new Date(d.created_at).toLocaleString()])
-        });
-        doc.save('mcq_results.pdf');
-      }
-    }
+// Export to Excel
+document.getElementById("exportExcel").addEventListener("click", () => {
+    const table = document.getElementById("dashboardTable");
+    const wb = XLSX.utils.table_to_book(table, { sheet: "Dashboard" });
+    XLSX.writeFile(wb, "dashboard.xlsx");
+});
 
-    function downloadSubjective(type) {
-      if (type === 'excel') {
-        const ws = utils.json_to_sheet(subjectiveData.map(d => ({
-          user_id: d.user_id,
-          user_email: d.user_email,
-          created_at: d.created_at,
-          ...d.answers
-        })));
-        const wb = utils.book_new();
-        utils.book_append_sheet(wb, ws, 'Subjective Answers');
-        writeFile(wb, 'subjective_answers.xlsx');
-      } else {
-        const doc = new jsPDF();
-        autoTable(doc, {
-          head: [['ชื่อพนักงาน', 'อีเมล', 'คำตอบ', 'วันที่ทำ']],
-          body: subjectiveData.map(d => [
-            d.user_id,
-            d.user_email,
-            JSON.stringify(d.answers, null, 2),
-            new Date(d.created_at).toLocaleString()
-          ])
-        });
-        doc.save('subjective_answers.pdf');
-      }
-    }
-
-    loadData();
-  </script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-</body>
+// Export to PDF
+document.getElementById("exportPDF").addEventListener("click", () => {
+    const element = document.getElementById("dashboardTable");
+    html2pdf().from(element).save("dashboard.pdf");
+});
+</script></body>
 </html>
