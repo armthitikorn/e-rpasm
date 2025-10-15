@@ -1,166 +1,389 @@
-
 <!DOCTYPE html>
 
 <html lang="th">
 <head>
 <meta charset="utf-8"/>
-<title>แดชบอร์ดผลการสอบ</title>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>แบบทดสอบปรนัย</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&amp;display=swap" rel="stylesheet"/>
 <style>
-body { font-family: 'Sarabun', sans-serif; background: #f4f6f8; padding: 20px; }
-h1 { text-align: center; color: #2c3e50; }
-table { width: 100%; border-collapse: collapse; margin-top: 20px; background: #fff; }
-th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
-th { background: #007acc; color: white; }
-tr:nth-child(even) { background: #f9f9f9; }
-.section { margin-top: 40px; }
-</style>
-</head>
+        /* โค้ด CSS สไตล์เดิม */
+        body {
+            font-family: 'Sarabun', sans-serif;
+            max-width: 900px;
+            margin: 30px auto;
+            background-color: #f9faff;
+            color: #333;
+            padding: 20px;
+        }
+        h2 {
+            color: #004080;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .question-container {
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            padding: 25px;
+            margin-bottom: 25px;
+        }
+        .question h3 {
+            color: #0059b3;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+        .choices {
+            list-style: none;
+            padding: 0;
+        }
+        .choices li {
+            margin-bottom: 8px;
+        }
+        .choices label {
+            display: block;
+            background: #e6f2ff;
+            padding: 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+        .choices label:hover {
+            background-color: #cce6ff;
+        }
+        input[type="radio"] {
+            margin-right: 10px;
+        }
+        button {
+            display: block;
+            width: 100%;
+            max-width: 300px;
+            padding: 15px;
+            font-size: 1.1rem;
+            background-color: #007acc;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            margin: 20px auto 0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+        }
+        button:hover {
+            background-color: #005fa3;
+        }
+        #result {
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 30px;
+            font-size: 1.2rem;
+            text-align: center;
+            font-weight: bold;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            display: none;
+        }
+        .loading-text {
+            text-align: center;
+            font-style: italic;
+            color: #666;
+            margin-top: 50px;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script><link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/></head>
 <body>
-<h1>แดชบอร์ดผลการสอบ</h1>
-<div class="section">
-<h2>ข้อสอบปรนัย (50 ข้อ)</h2>
-<table>
-<tr><th>ข้อ</th><th>คำถาม</th><th>คำตอบที่ถูกต้อง</th></tr>
-</table>
+<div class="container mt-4 mb-4">
+<h3 class="text-primary">แดชบอร์ดผลการสอบ</h3>
+<form class="row g-3" id="filterForm">
+<div class="col-md-4">
+<label class="form-label" for="emailFilter">กรองตามอีเมล</label>
+<input class="form-control" id="emailFilter" placeholder="example@email.com" type="email"/>
 </div>
-<div class="section">
-<h2>ข้อสอบอัตนัย (10 ข้อ)</h2>
-<table>
-<tr><th>ข้อ</th><th>คำถาม</th></tr>
-<tr><td>1</td><td>1. ลูกค้ากังวลเรื่องค่ารักษาพยาบาลสูง คุณจะอธิบายความคุ้มครองอย่างไร?</td></tr><tr><td>2</td><td>2. หากลูกค้าสงสัยว่าประกันสุขภาพคุ้มค่าหรือไม่ คุณจะตอบอย่างไร?</td></tr><tr><td>3</td><td>3. ลูกค้ากังวลว่าจะเคลมไม่ได้ คุณจะสร้างความมั่นใจอย่างไร?</td></tr><tr><td>4</td><td>4. หากลูกค้าบอกว่าไม่มีเวลาอ่านเงื่อนไข คุณจะอธิบายให้เข้าใจง่ายอย่างไร?</td></tr><tr><td>5</td><td>5. ลูกค้ากังวลเรื่องโรคประจำตัว คุณจะนำเสนอแผนประกันอย่างไร?</td></tr><tr><td>6</td><td>6. หากลูกค้ากลัวว่าประกันจะไม่ครอบคลุมตอนจำเป็น คุณจะอธิบายอย่างไร?</td></tr><tr><td>7</td><td>7. ลูกค้ากังวลเรื่องการจ่ายเบี้ยระยะยาว คุณจะเสนอทางเลือกใด?</td></tr><tr><td>8</td><td>8. หากลูกค้าบอกว่าเคยมีประสบการณ์ไม่ดีจากบริษัทประกัน คุณจะรับมืออย่างไร?</td></tr><tr><td>9</td><td>9. ลูกค้ากังวลว่าจะไม่เข้าใจการเคลม คุณจะให้คำแนะนำอย่างไร?</td></tr><tr><td>10</td><td>10. หากลูกค้าบอกว่า “ยังไม่พร้อมตัดสินใจ” คุณจะปิดการขายอย่างไร?</td></tr>
-</table>
+<div class="col-md-4">
+<label class="form-label" for="dateFilter">กรองตามวันที่</label>
+<input class="form-control" id="dateFilter" type="date"/>
+</div>
+<div class="col-md-4 d-flex align-items-end">
+<button class="btn btn-primary w-100" onclick="applyFilters()" type="button">กรองข้อมูล</button>
+</div>
+</form>
 </div>
 
-<h2>แดชบอร์ดผลการสอบพนักงาน</h2>
-<div style="margin-bottom:20px;">
-<input id="emailInput" placeholder="ค้นหาอีเมลพนักงาน" type="text"/>
-<input id="dateInput" type="date"/>
-<button id="searchBtn">ค้นหา</button>
-</div>
-<canvas height="300" id="scoreChart" style="margin-bottom:30px;" width="600"></canvas>
-<h3>ตารางคะแนนข้อสอบปรนัย</h3>
-<table border="1" cellpadding="8" id="dashboardTable" style="width:100%;margin-bottom:30px;">
-<thead>
-<tr><th>#</th><th>อีเมล</th><th>คะแนน</th><th>จำนวนข้อ</th><th>วันที่ทำแบบทดสอบ</th></tr>
-</thead>
-<tbody id="quizTableBody"></tbody>
-</table>
-<h3>ตารางคำตอบข้อสอบอัตนัย</h3>
-<table border="1" cellpadding="8" style="width:100%;margin-bottom:30px;">
-<thead>
-<tr><th>#</th><th>อีเมล</th><th>วันที่ทำแบบทดสอบ</th><th>คำตอบ</th></tr>
-</thead>
-<tbody id="subjectiveTableBody"></tbody>
-</table>
-<button id="exportExcel">ดาวน์โหลด Excel</button>
-<button id="exportPDF">ดาวน์โหลด PDF</button>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<h2>แบบทดสอบปรนัย: การขายประกันชีวิตและสุขภาพผ่านทางโทรศัพท์ (50 ข้อ)</h2>
+<div class="loading-text" id="loading">กำลังโหลดแบบทดสอบ...</div>
+<form class="hidden" id="quizForm"></form>
+<button class="hidden" id="submitBtn">ส่งคำตอบ</button>
+<div id="result"></div>
+<a href="index3.html">
+<button style="margin-top: 20px;">ไปหน้าถัดไป</button>
+</a>
 <script type="module">
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
-import Chart from 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/+esm';
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
-const supabaseUrl = 'https://wzwyotzzxycqfwercakh.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind6d3lvdHp6eHljcWZ3ZXJjYWtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcwNTg3MTMsImV4cCI6MjA3MjYzNDcxM30.lgiAf9oBUqsaWGb3u_80wuoKAODQHE_lIBxpGumhrno';
-const supabase = createClient(supabaseUrl, supabaseKey);
+        // --- Supabase Setup ---
+        const supabaseUrl = 'https://wzwyotzzxycqfwercakh.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind6d3lvdHp6eHljcWZ3ZXJjYWtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcwNTg3MTMsImV4cCI6MjA3MjYzNDcxM30.lgiAf9oBUqsaWGb3u_80wuoKAODQHE_lIBxpGumhrno';
+        const supabase = createClient(supabaseUrl, supabaseKey);
 
-// DOM elements
-const searchBtn = document.getElementById("searchBtn");
-const emailInput = document.getElementById("emailInput");
-const dateInput = document.getElementById("dateInput");
-const quizTableBody = document.getElementById("quizTableBody");
-const subjectiveTableBody = document.getElementById("subjectiveTableBody");
-const chartCanvas = document.getElementById("scoreChart").getContext("2d");
+        let currentUser = null;
 
-// Search and render dashboard
-searchBtn.addEventListener("click", async () => {
-    const email = emailInput.value.trim();
-    const date = dateInput.value.trim();
+        // ข้อมูลคำถาม (ใช้ข้อมูลเดิมทั้งหมด)
+        const questions = [
+    { q: "1. หากผู้สมัครมีประวัติโรคตับแข็งจากการดื่มสุราเรื้อรัง บริษัทประกันจะพิจารณาอย่างไร?", a: "A", choices: ["ปฏิเสธการรับประกันทันที", "รับประกันโดยมีเงื่อนไข", "เพิ่มเบี้ยประกัน", "ให้ความคุ้มครองเฉพาะโรคตับ"] },
+    { q: "2. การมีประวัติโรคพาร์กินสันส่งผลต่อการพิจารณาประกันในด้านใดมากที่สุด?", a: "B", choices: ["ความเสี่ยงต่อการเสียชีวิต", "ความเสี่ยงต่อการทุพพลภาพถาวร", "ความเสี่ยงต่อการติดเชื้อ", "ความเสี่ยงต่อการเกิดอุบัติเหตุ"] },
+    { q: "3. โรคใดที่มีลักษณะเป็นโรคทางพันธุกรรมและมีผลต่อการสร้างเม็ดเลือดแดงผิดปกติ?", a: "A", choices: ["ธาลัสซีเมีย", "SLE", "โรคเบาหวาน", "โรคถุงลมโป่งพอง"] },
+    { q: "4. หากผู้สมัครมีภาวะตาบอดทั้งสองข้างตั้งแต่กำเนิด บริษัทประกันจะพิจารณาอย่างไร?", a: "A", choices: ["ปฏิเสธการรับประกัน", "เพิ่มเบี้ยประกัน", "ให้ความคุ้มครองเฉพาะอุบัติเหตุ", "รับประกันโดยไม่มีเงื่อนไข"] },
+    { q: "5. โรคใดที่มีผลต่อระบบประสาทส่วนกลางและอาจทำให้เกิดอาการชักซ้ำ?", a: "A", choices: ["โรคลมชัก", "โรควิตกกังวล", "โรคซึมเศร้า", "โรคสมาธิสั้น"] },
+    { q: "6. การไม่แถลงโรคประจำตัวในการสมัครประกันจะส่งผลอย่างไรในทางกฎหมาย?", a: "B", choices: ["ถูกปรับเบี้ยประกันย้อนหลัง", "ถูกปฏิเสธการเคลมแม้มีกรมธรรม์", "ถูกยกเลิกกรมธรรม์ทันที", "ไม่มีผลต่อการเคลม"] },
+    { q: "7. โรคใดที่มีผลต่อระบบภูมิคุ้มกันและอาจทำให้เกิดการอักเสบทั่วร่างกาย?", a: "A", choices: ["SLE", "โรคหอบหืด", "โรคข้อเสื่อม", "โรคเบาหวาน"] },
+    { q: "8. หากผู้สมัครมีประวัติเส้นเลือดในสมองตีบ บริษัทประกันจะพิจารณาอย่างไร?", a: "A", choices: ["ปฏิเสธการรับประกัน", "เพิ่มเบี้ยประกัน", "รับประกันโดยมีเงื่อนไข", "ให้ความคุ้มครองเฉพาะอุบัติเหตุ"] },
+    { q: "9. โรคใดที่มีความเสี่ยงต่อการแพร่เชื้อสูงและมักถูกปฏิเสธการประกัน?", a: "A", choices: ["HIV/AIDS", "โรคหัด", "โรคไข้หวัดใหญ่", "โรคตาแดง"] },
+    { q: "10. การมีประวัติโรคเบาหวานที่ต้องฉีดอินซูลินส่งผลต่อการพิจารณาอย่างไร?", a: "A", choices: ["ปฏิเสธการรับประกัน", "เพิ่มเบี้ยประกัน", "รับประกันโดยไม่มีเงื่อนไข", "ให้ความคุ้มครองเฉพาะโรคเบาหวาน"] },
+    { q: "11. โรคใดที่มีผลต่อการพัฒนาทางสมองและพฤติกรรมตั้งแต่เด็ก?", a: "A", choices: ["ดาวน์ซินโดรม", "โรคสมาธิสั้น", "โรควิตกกังวล", "โรคเครียด"] },
+    { q: "12. หากผู้สมัครมีภาวะกล้ามเนื้ออ่อนแรงตั้งแต่กำเนิด จะส่งผลต่อการพิจารณาอย่างไร?", a: "A", choices: ["ปฏิเสธการรับประกัน", "เพิ่มเบี้ยประกัน", "รับประกันโดยมีเงื่อนไข", "ให้ความคุ้มครองเฉพาะอุบัติเหตุ"] },
+    { q: "13. โรคใดที่มีผลต่อระบบหายใจและมักถูกพิจารณาอย่างเข้มงวด?", a: "A", choices: ["โรคถุงลมโป่งพอง", "โรคหอบหืด", "โรคหวัด", "โรคภูมิแพ้"] },
+    { q: "14. หากผู้สมัครมีประวัติโรคซึมเศร้าเรื้อรัง บริษัทประกันจะพิจารณาอย่างไร?", a: "A", choices: ["ปฏิเสธการรับประกัน", "เพิ่มเบี้ยประกัน", "รับประกันโดยไม่มีเงื่อนไข", "ให้ความคุ้มครองเฉพาะจิตเวช"] },
+    { q: "15. โรคใดที่มีผลต่อการทำงานของต่อมไทรอยด์และต้องควบคุมด้วยยา?", a: "A", choices: ["ไทรอยด์เป็นพิษ", "โรคเบาหวาน", "โรคตับอักเสบ", "โรคข้ออักเสบ"] },
+    { q: "16. หากผู้สมัครมีประวัติโรคมะเร็งที่รักษาหายแล้ว บริษัทประกันจะพิจารณาอย่างไร?", a: "A", choices: ["รับประกันโดยมีเงื่อนไข", "ปฏิเสธการรับประกันทันที", "เพิ่มเบี้ยประกัน", "ให้ความคุ้มครองเฉพาะโรคมะเร็ง"] },
+    { q: "17. โรคใดที่มีผลต่อระบบสืบพันธุ์และมักถูกปฏิเสธการประกัน?", a: "A", choices: ["ซิฟิลิส", "โรคหอบหืด", "โรคไข้เลือดออก", "โรคตาแดง"] },
+    { q: "18. หากผู้สมัครมีภาวะอัมพาตจากอุบัติเหตุในอดีต บริษัทประกันจะพิจารณาอย่างไร?", a: "A", choices: ["ปฏิเสธการรับประกัน", "เพิ่มเบี้ยประกัน", "รับประกันโดยไม่มีเงื่อนไข", "ให้ความคุ้มครองเฉพาะอุบัติเหตุ"] },
+    { q: "19. โรคใดที่มีผลต่อการสร้างภูมิคุ้มกันและอาจทำให้เกิดการติดเชื้อซ้ำ?", a: "A", choices: ["HIV/AIDS", "โรคหอบหืด", "โรคเบาหวาน", "โรคข้ออักเสบ"] },
+    { q: "22. หากลูกค้าบอกว่าไม่มีเวลา ควรทำอย่างไร", a: "C", choices: ["พูดต่อทันที", "ตื๊อให้จบ", "ขอนัดเวลาใหม่", "วางสายไปเลย"] },
+    { q: "23. การเสนอประกันแบบเร่งรีบมีผลอย่างไร", a: "D", choices: ["ลูกค้าซื้อทันที", "เข้าใจง่าย", "รู้สึกประทับใจ", "อาจทำให้ลูกค้าไม่เชื่อมั่น"] },
+    { q: "24. ควรใช้ถ้อยคำอย่างไรเมื่ออธิบายกรมธรรม์", a: "B", choices: ["ศัพท์เทคนิคมาก ๆ", "ภาษาง่าย ๆ เข้าใจง่าย", "ใช้คำยาว ๆ", "แค่บอกชื่อแผน"] },
+    { q: "25. ประโยชน์ของเบี้ยประกันที่ลูกค้าจ่ายคืออะไร", a: "A", choices: ["เป็นค่าคุ้มครองและสะสมทรัพย์", "เป็นค่าปรับ", "ไม่มีประโยชน์", "จ่ายให้ตัวแทน"] },
+    { q: "26. การจดบันทึกระหว่างสนทนาช่วยได้อย่างไร", a: "C", choices: ["ไม่จำเป็น", "เสียเวลา", "ติดตามลูกค้าได้ดีขึ้น", "ทำให้ลืม"] },
+    { q: "27. แนวทางตอบข้อโต้แย้งของลูกค้าคืออะไร", a: "D", choices: ["หลีกเลี่ยงการตอบ", "พูดให้จบไว", "พูดวกไปวนมา", "ฟังและตอบด้วยเหตุผลที่ตรงประเด็น"] },
+    { q: "28. เมื่อลูกค้าถามเรื่องภาษี ควรตอบอย่างไร", a: "B", choices: ["ไม่ต้องรู้หรอก", "สามารถลดหย่อนภาษีได้ตามเงื่อนไขของกรมสรรพากร", "ไม่เกี่ยวกับกรมธรรม์", "ขึ้นกับดวง"] },
+    { q: "29. ทำไมต้องเก็บข้อมูลลูกค้าอย่างเป็นระบบ", a: "C", choices: ["เพื่อลืมง่าย", "เพื่อโทรซ้ำโดยไม่รู้ตัว", "เพื่อติดตามผลและบริการภายหลัง", "เพื่อให้ข้อมูลซ้ำ ๆ"] },
+    { q: "30. การตั้งเป้าหมายในการขายมีความสำคัญอย่างไร", a: "A", choices: ["ช่วยวางแผนการทำงาน", "ไม่มีผล", "ทำให้เครียด", "ไม่จำเป็น"] },
+    { q: "31. การใช้คำถามเปิดในการพูดคุยช่วยอย่างไร", a: "B", choices: ["ทำให้ลูกค้ารู้สึกกดดัน", "ทำให้รู้ความต้องการลูกค้า", "เสียเวลา", "ทำให้ลูกค้าโกรธ"] },
+    { q: "32. การใช้ภาษาที่เข้าใจง่ายสำคัญอย่างไร", a: "A", choices: ["ทำให้ลูกค้าเข้าใจง่ายขึ้น", "ทำให้ลูกค้าสับสน", "ไม่มีความหมาย", "ทำให้ดูไม่เป็นมืออาชีพ"] },
+    { q: "33. เมื่อไหร่ควรเริ่มอธิบายผลประโยชน์", a: "C", choices: ["ทันทีที่โทร", "เมื่อจบการพูด", "เมื่อเข้าใจความต้องการลูกค้า", "เมื่อหมดเวลาพูด"] },
+    { q: "34. การฟังอย่างตั้งใจช่วยอะไร", a: "D", choices: ["ทำให้เสียงดังขึ้น", "ลดเวลาพูด", "ไม่สำคัญ", "เข้าใจลูกค้ามากขึ้น"] },
+    { q: "35. วิธีจัดการกับคำถามยากของลูกค้าคืออะไร", a: "B", choices: ["ตอบไปก่อนโดยไม่คิด", "ขอเวลาตรวจสอบข้อมูล", "เลี่ยงไม่ตอบ", "วางสาย"] },
+    { q: "36. การสร้างความน่าเชื่อถือทำได้โดยวิธีใด", a: "A", choices: ["แนะนำตัวอย่างชัดเจน", "พูดเร็ว", "ไม่สนใจลูกค้า", "พูดให้จบเร็ว"] },
+    { q: "37. คำถามประเภทไหนช่วยให้ลูกค้าพูดมากขึ้น", a: "C", choices: ["คำถามปลายปิด", "คำถามใช่/ไม่ใช่", "คำถามเปิด", "คำถามเดี่ยว"] },
+    { q: "38. การสรุปเนื้อหาในการพูดสำคัญอย่างไร", a: "D", choices: ["ไม่สำคัญ", "ทำให้เสียเวลา", "ทำให้ลูกค้าเบื่อ", "ช่วยให้เข้าใจตรงกัน"] },
+    { q: "39. วิธีปฏิเสธลูกค้าอย่างสุภาพควรทำอย่างไร", a: "B", choices: ["ตัดบททันที", "แสดงความเข้าใจและขอบคุณ", "พูดเสียงดัง", "วางสายทันที"] },
+    { q: "40. เมื่อปิดการขายแล้ว ควรทำอะไรต่อ", a: "C", choices: ["เลิกงานทันที", "ไม่ต้องติดต่อลูกค้าอีก", "ติดตามผลและบริการหลังการขาย", "เปลี่ยนสายงาน"] },
+    { q: "41. ข้อใดเป็นประโยชน์ของประกันสุขภาพ", a: "B", choices: ["เพิ่มหนี้สิน", "ช่วยลดภาระค่ารักษาพยาบาล", "ไม่มีประโยชน์", "เพิ่มความเสี่ยง"] },
+    { q: "42. การอธิบายแผนประกันควรเน้นจุดใด", a: "C", choices: ["ราคาเพียงอย่างเดียว", "คำพูดทางเทคนิค", "ผลประโยชน์และความคุ้มครอง", "ความยาวของกรมธรรม์"] },
+    { q: "43. คำพูดที่ควรหลีกเลี่ยงในการโทรขายคืออะไร", a: "A", choices: ["คำหยาบ", "คำสุภาพ", "คำถามเปิด", "คำชม"] },
+    { q: "44. การรับฟังความคิดเห็นลูกค้าช่วยอย่างไร", a: "D", choices: ["ทำให้เสียเวลา", "ลดความน่าเชื่อถือ", "ทำให้ลูกค้ารู้สึกไม่ดี", "สร้างความสัมพันธ์ที่ดี"] },
+    { q: "45. เมื่อลูกค้าสนใจแต่ยังไม่ตัดสินใจ ควรทำอย่างไร", a: "B", choices: ["ยกเลิกการติดต่อ", "นัดหมายติดตาม", "บังคับให้ซื้อ", "พูดเรื่องอื่น"] },
+    { q: "46. การใช้คำพูดที่ชัดเจนช่วยอะไร", a: "A", choices: ["ทำให้ลูกค้าเข้าใจง่าย", "ทำให้สับสน", "เพิ่มเวลาโทร", "ลดความน่าเชื่อถือ"] },
+    { q: "47. การพูดคุยด้วยความสุภาพช่วยอะไร", a: "C", choices: ["ทำให้ลูกค้าโกรธ", "ทำให้เสียเวลา", "สร้างความประทับใจ", "ทำให้พูดน้อยลง"] },
+    { q: "48. ควรตอบคำถามลูกค้าอย่างไรเมื่อไม่ทราบคำตอบ", a: "B", choices: ["ตอบมั่วไปก่อน", "ขอเวลาตรวจสอบและติดต่อกลับ", "หลีกเลี่ยงไม่ตอบ", "วางสาย"] },
+    { q: "49. การทำความเข้าใจความต้องการลูกค้าช่วยอะไร", a: "D", choices: ["ทำให้เสียเวลา", "ทำให้ลูกค้าเบื่อ", "ไม่มีผล", "เสนอแผนที่ตรงกับลูกค้า"] },
+    { q: "50. ข้อใดคือสิ่งที่ควรจดบันทึกหลังโทรหาลูกค้า", a: "C", choices: ["จำนวนเพื่อนของลูกค้า", "ที่อยู่บ้าน", "ความต้องการและข้อสงสัยของลูกค้า", "วันเกิดของตัวแทน"] },
+    { q: "49. ข้อใดต่อไปนี้เกี่ยวข้องกับโรคที่มักถูกปฏิเสธการทำประกัน?", a: "A", choices: ["โรคที่มีความเสี่ยงต่อชีวิตสูง", "โรคที่รักษาหายขาดแล้ว", "โรคทั่วไปที่ไม่รุนแรง", "โรคที่ไม่มีผลต่อการทำงาน"] },
+    { q: "50. ข้อใดต่อไปนี้เกี่ยวข้องกับโรคที่มักถูกปฏิเสธการทำประกัน?", a: "A", choices: ["โรคที่มีความเสี่ยงต่อชีวิตสูง", "โรคที่รักษาหายขาดแล้ว", "โรคทั่วไปที่ไม่รุนแรง", "โรคที่ไม่มีผลต่อการทำงาน"] },
+];
+        // --- DOM Elements ---
+        const quizForm = document.getElementById('quizForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const loading = document.getElementById('loading');
+        const resultDiv = document.getElementById('result');
 
-    if (!email && !date) {
-        alert("กรุณากรอกอีเมลหรือวันที่เพื่อค้นหา");
-        return;
-    }
+        // ฟังก์ชันสร้างแบบทดสอบ (ไม่มีการเปลี่ยนแปลง)
+        function renderQuiz() {
+            loading.classList.add('hidden');
+            quizForm.classList.remove('hidden');
+            submitBtn.classList.remove('hidden');
 
-    // Clear previous results
-    quizTableBody.innerHTML = "";
-    subjectiveTableBody.innerHTML = "";
+            questions.forEach((q, index) => {
+                const container = document.createElement('div');
+                container.className = 'question-container';
 
-    // Fetch quiz results
-    const { data: quizResults, error: quizError } = await supabase
-        .from("quiz_results")
-        .select("*")
-        .ilike("user_email", `%${email}%`);
+                const questionTitle = document.createElement('h3');
+                questionTitle.textContent = q.q;
+                container.appendChild(questionTitle);
 
-    // Filter by date if provided
-    const filteredQuiz = date ? quizResults.filter(r => r.created_at?.startsWith(date)) : quizResults;
+                const ul = document.createElement('ul');
+                ul.className = 'choices';
 
-    // Render quiz table
-    filteredQuiz.forEach((r, i) => {
-        const row = document.createElement("tr");
-        row.innerHTML = `
-            <td>${i + 1}</td>
-            <td>${r.user_email}</td>
-            <td>${r.score}</td>
-            <td>${r.total_questions}</td>
-            <td>${r.created_at?.split("T")[0]}</td>
-        `;
-        quizTableBody.appendChild(row);
-    });
+                q.choices.forEach((choice, i) => {
+                    const li = document.createElement('li');
+                    const label = document.createElement('label');
+                    const input = document.createElement('input');
+                    input.type = 'radio';
+                    input.name = `question-${index}`;
+                    input.value = String.fromCharCode(65 + i);
+                    label.appendChild(input);
+                    label.appendChild(document.createTextNode(`${input.value}. ${choice}`));
+                    li.appendChild(label);
+                    ul.appendChild(li);
+                });
 
-    // Render chart
-    const chartData = {
-        labels: filteredQuiz.map(r => r.user_email),
-        datasets: [{
-            label: "คะแนนรวม",
-            data: filteredQuiz.map(r => r.score),
-            backgroundColor: "rgba(0, 122, 204, 0.6)"
-        }]
-    };
-    new Chart(chartCanvas, {
+                container.appendChild(ul);
+                quizForm.appendChild(container);
+            });
+        }
+        
+        // **ปรับปรุงการเรียกใช้: ห่อการดึง User ไว้ในฟังก์ชัน**
+        async function initialize() {
+            // ดึงข้อมูล User ก่อน เพื่อให้ currentUser มีค่า
+            try {
+                const { data: { user }, error } = await supabase.auth.getUser();
+                if (user) {
+                    currentUser = user;
+                }
+            } catch (e) {
+                console.warn("Could not retrieve current user. Running as anonymous.", e);
+            }
+
+            // เรียก renderQuiz() เพื่อสร้างคำถามหลังจากเตรียมข้อมูลเบื้องต้นเสร็จ
+            renderQuiz();
+        }
+
+        // เริ่มต้นการทำงานทันทีเมื่อสคริปต์โหลด
+        initialize();
+
+
+        // --- Event Listener: Submit Button (ตรรกะ Supabase เดิมที่ถูกต้อง) ---
+        submitBtn.addEventListener('click', async () => {
+            // ปิดปุ่มทันทีเพื่อป้องกันการส่งซ้ำ
+            submitBtn.disabled = true;
+
+            let score = 0;
+            const answers = [];
+
+            // 1. คำนวณคะแนนและรวบรวมคำตอบ
+            questions.forEach((q, index) => {
+                const selected = document.querySelector(`input[name="question-${index}"]:checked`);
+                const answer = selected ? selected.value : null; 
+                answers.push(answer);
+                if (answer === q.a) score++;
+            });
+
+            const totalQuestions = questions.length;
+            const userId = currentUser?.id || "anonymous";
+            const userEmail = currentUser?.email || "anonymous@example.com";
+
+            // 2. บันทึกผลลัพธ์โดยใช้ Supabase Client
+            const { error } = await supabase
+                .from('quiz_results') // **ชื่อตาราง** (ต้องมีอยู่จริงใน Supabase)
+                .insert([
+                    {
+                        user_id: userId,
+                        user_email: userEmail,
+                        score: score,
+                        total_questions: totalQuestions,
+                        answers: answers // ต้องเป็นคอลัมน์ JSONB หรือ Text Array ใน Supabase
+                    }
+                ]);
+
+            // 3. จัดการผลลัพธ์และการแสดงผล
+            if (error) {
+                console.error('Error saving quiz result:', error.message);
+                resultDiv.textContent = `เกิดข้อผิดพลาดในการบันทึกผล (รหัส: ${error.code}) กรุณาลองใหม่ หรือตรวจสอบ RLS ใน Supabase`;
+                resultDiv.style.backgroundColor = '#ffd1d1';
+                resultDiv.style.color = '#900';
+                submitBtn.disabled = false; // อนุญาตให้ลองใหม่ได้
+            } else {
+                console.log("Quiz result saved successfully.");
+                resultDiv.textContent = `บันทึกผลสำเร็จ! คุณได้คะแนน ${score} จาก ${totalQuestions} ข้อ`;
+                resultDiv.style.backgroundColor = '#d1ffd1';
+                resultDiv.style.color = '#005900';
+            }
+
+            resultDiv.style.display = 'block';
+        });
+    </script>
+
+<div class="container mt-5">
+<canvas height="120" id="scoreChart"></canvas>
+</div>
+<script>
+async function fetchResults() {
+    const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm');
+    const supabase = createClient(
+        'https://wzwyotzzxycqfwercakh.supabase.co',
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind6d3lvdHp6eHljcWZ3ZXJjYWtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcwNTg3MTMsImV4cCI6MjA3MjYzNDcxM30.lgiAf9oBUqsaWGb3u_80wuoKAODQHE_lIBxpGumhrno'
+    );
+
+    const { data: quizData } = await supabase.from('quiz_results').select('*');
+    const { data: subjectiveData } = await supabase.from('subjective_answers').select('*');
+
+    window.allResults = { quizData, subjectiveData };
+    renderDashboard(quizData, subjectiveData);
+}
+
+function applyFilters() {
+    const email = document.getElementById("emailFilter").value.trim().toLowerCase();
+    const date = document.getElementById("dateFilter").value;
+
+    const { quizData, subjectiveData } = window.allResults;
+
+    const filteredQuiz = quizData.filter(row =>
+        (!email || row.user_email.toLowerCase().includes(email)) &&
+        (!date || row.created_at?.startsWith(date))
+    );
+
+    const filteredSubjective = subjectiveData.filter(row =>
+        (!email || row.user_email.toLowerCase().includes(email)) &&
+        (!date || row.created_at?.startsWith(date))
+    );
+
+    renderDashboard(filteredQuiz, filteredSubjective);
+}
+
+function renderDashboard(quizData, subjectiveData) {
+    const resultDiv = document.getElementById("result");
+    resultDiv.innerHTML = "";
+
+    const quizTable = document.createElement("table");
+    quizTable.className = "table table-bordered table-striped mt-4";
+    quizTable.innerHTML = `
+        <thead class="table-dark"><tr><th>อีเมล</th><th>คะแนน</th><th>จำนวนข้อ</th><th>วันที่</th></tr></thead>
+        <tbody>${quizData.map(row => `
+            <tr>
+                <td>${row.user_email}</td>
+                <td>${row.score}</td>
+                <td>${row.total_questions}</td>
+                <td>${row.created_at?.split("T")[0]}</td>
+            </tr>`).join("")}</tbody>
+    `;
+    resultDiv.appendChild(quizTable);
+
+    const subjectiveTable = document.createElement("table");
+    subjectiveTable.className = "table table-bordered table-striped mt-4";
+    subjectiveTable.innerHTML = `
+        <thead class="table-dark"><tr><th>อีเมล</th><th>คำตอบอัตนัย</th><th>วันที่</th></tr></thead>
+        <tbody>${subjectiveData.map(row => `
+            <tr>
+                <td>${row.user_email}</td>
+                <td><pre>${JSON.stringify(row.answers, null, 2)}</pre></td>
+                <td>${row.created_at?.split("T")[0]}</td>
+            </tr>`).join("")}</tbody>
+    `;
+    resultDiv.appendChild(subjectiveTable);
+
+    const ctx = document.getElementById("scoreChart").getContext("2d");
+    if (window.scoreChart) window.scoreChart.destroy();
+    window.scoreChart = new Chart(ctx, {
         type: "bar",
-        data: chartData,
+        data: {
+            labels: quizData.map(row => row.user_email),
+            datasets: [{
+                label: "คะแนนรวม",
+                data: quizData.map(row => row.score),
+                backgroundColor: "rgba(0,122,204,0.6)"
+            }]
+        },
         options: {
             responsive: true,
             plugins: {
-                legend: { display: false },
-                title: { display: true, text: "กราฟคะแนนรวมของพนักงาน" }
+                legend: { display: true },
+                title: { display: true, text: "กราฟคะแนนรวมของผู้เข้าสอบ" }
             }
         }
     });
+}
 
-    // Fetch subjective answers
-    const { data: subjectiveAnswers, error: subError } = await supabase
-        .from("subjective_answers")
-        .select("*")
-        .ilike("user_email", `%${email}%`);
-
-    const filteredSubjective = date ? subjectiveAnswers.filter(r => r.created_at?.startsWith(date)) : subjectiveAnswers;
-
-    // Render subjective table
-    filteredSubjective.forEach((r, i) => {
-        const row = document.createElement("tr");
-        row.innerHTML = `
-            <td>${i + 1}</td>
-            <td>${r.user_email}</td>
-            <td>${r.created_at?.split("T")[0]}</td>
-            <td><pre>${JSON.stringify(r.answers, null, 2)}</pre></td>
-        `;
-        subjectiveTableBody.appendChild(row);
-    });
-});
-
-// Export to Excel
-document.getElementById("exportExcel").addEventListener("click", () => {
-    const table = document.getElementById("dashboardTable");
-    const wb = XLSX.utils.table_to_book(table, { sheet: "Dashboard" });
-    XLSX.writeFile(wb, "dashboard.xlsx");
-});
-
-// Export to PDF
-document.getElementById("exportPDF").addEventListener("click", () => {
-    const element = document.getElementById("dashboardTable");
-    html2pdf().from(element).save("dashboard.pdf");
-});
+fetchResults();
 </script></body>
 </html>
