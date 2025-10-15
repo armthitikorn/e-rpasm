@@ -14,10 +14,10 @@
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind6d3lvdHp6eHljcWZ3ZXJjYWtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcwNTg3MTMsImV4cCI6MjA3MjYzNDcxM30.lgiAf9oBUqsaWGb3u_80wuoKAODQHE_lIBxpGumhrno'
     );
 
+    // *** ตรรกะการดึงข้อมูลครั้งเดียวเพื่อความเร็ว ***
     let allQuizResults = [];
     let allSubjectiveAnswers = [];
 
-    // ดึงข้อมูลครั้งเดียวเมื่อโหลดหน้าจอ
     async function fetchAllDataOnce() {
         try {
             const { data: quizResults } = await supabase.from("quiz_results").select("*");
@@ -87,6 +87,7 @@
           }]
         },
         options: {
+          // *** ปิด Animation ***
           animation: false,
           scales: {
             y: { beginAtZero: true, grid: { color: 'rgba(0, 0, 0, 0.05)' } },
@@ -185,7 +186,7 @@
       border: 1px solid #ddd;
       border-radius: 6px;
       flex-grow: 1; 
-      max-width: 300px; /* จำกัดความกว้างบน Desktop */
+      max-width: 300px;
       transition: border-color 0.3s ease;
     }
     
@@ -252,7 +253,7 @@
 
     canvas {
       max-width: 100%;
-      height: 160px !important; 
+      height: 160px !important; /* กราฟขนาดเล็กตามต้องการ */
       margin-bottom: 30px;
       background: var(--card-background);
       padding: 20px;
@@ -268,7 +269,7 @@
 
     .btn-group {
       display: flex;
-      flex-wrap: wrap; /* ทำให้ปุ่มลงบรรทัดเมื่อหน้าจอแคบ */
+      flex-wrap: wrap; 
       gap: 15px;
       justify-content: center;
       margin-bottom: 30px;
@@ -278,7 +279,6 @@
     /* RESPONSIVE MEDIA QUERIES (สำหรับมือถือ) */
     /* ------------------------------------------- */
     @media (max-width: 768px) {
-        /* ทำให้ input และปุ่มขยายเต็มความกว้าง */
         .search-box, .btn-group {
             flex-direction: column;
             align-items: stretch;
@@ -295,11 +295,10 @@
             width: 100%;
         }
         
-        /* ลดขนาดตัวอักษรหัวข้อบนมือถือ */
         h2 { font-size: 1.5rem; }
         h3 { font-size: 1.2rem; }
         
-        /* ลบ min-width ของตารางเพื่อให้ปรับตามขนาดหน้าจอได้ ถ้าไม่เลื่อน */
+        /* ลบ min-width ของตารางเพื่อให้ปรับตามขนาดหน้าจอได้ */
         table {
             min-width: unset;
         }
@@ -322,7 +321,7 @@
     <canvas id="scoreChart" height="160"></canvas>
     
     <h3>ตารางสรุปคะแนน (ข้อสอบปรนัย)</h3>
-    <div class="table-container">
+        <div class="table-container">
       <table id="quizTable">
         <thead>
                 <tr><th>#</th><th>ชื่อผู้ทำแบบทดสอบ</th><th>อีเมล</th><th>คะแนน</th><th>จำนวนข้อ</th><th>วันที่ทำแบบทดสอบ</th></tr>
@@ -332,7 +331,7 @@
     </div>
 
     <h3>ตารางคำตอบ (ข้อสอบอัตนัย)</h3>
-    <div class="table-container">
+        <div class="table-container">
       <table id="subjectiveTable">
         <thead>
                 <tr><th>#</th><th>ชื่อผู้ทำแบบทดสอบ</th><th>อีเมล</th><th>คำตอบ</th><th>วันที่ทำแบบทดสอบ</th></tr>
