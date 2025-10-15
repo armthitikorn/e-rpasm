@@ -4,8 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>แดชบอร์ดผลการสอบ</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script type="module">
     import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
@@ -14,10 +13,10 @@
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind6d3lvdHp6eHljcWZ3ZXJjYWtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcwNTg3MTMsImV4cCI6MjA3MjYzNDcxM30.lgiAf9oBUqsaWGb3u_80wuoKAODQHE_lIBxpGumhrno'
     );
 
-    // *** ตรรกะการดึงข้อมูลครั้งเดียวเพื่อความเร็ว ***
     let allQuizResults = [];
     let allSubjectiveAnswers = [];
 
+    // ดึงข้อมูลครั้งเดียวเมื่อโหลดหน้าจอ
     async function fetchAllDataOnce() {
         try {
             const { data: quizResults } = await supabase.from("quiz_results").select("*");
@@ -26,12 +25,12 @@
             allQuizResults = quizResults || [];
             allSubjectiveAnswers = subjectiveAnswers || [];
             
+            // เรียกแสดงผลครั้งแรก
             fetchData();
         } catch (e) {
             console.error("Error fetching initial data:", e);
         }
     }
-
 
     async function fetchData() {
       const email = document.getElementById("emailInput").value.trim();
@@ -48,7 +47,7 @@
       );
 
       renderTables(filteredQuiz, filteredSubjective);
-      renderChart(filteredQuiz);
+      // ลบ renderChart(filteredQuiz); ออกไป
     }
 
     function renderTables(quizData, subjectiveData) {
@@ -70,37 +69,7 @@
       });
     }
 
-    function renderChart(data) {
-      const ctx = document.getElementById("scoreChart").getContext("2d");
-      const labels = data.map(r => r.user_email);
-      const scores = data.map(r => r.score);
-      if (window.scoreChartInstance) window.scoreChartInstance.destroy();
-      window.scoreChartInstance = new Chart(ctx, {
-        type: "bar",
-        data: {
-          labels: labels,
-          datasets: [{
-            label: "คะแนนรวม",
-            data: scores,
-            backgroundColor: "#007acc",
-             borderRadius: 4
-          }]
-        },
-        options: {
-          // *** ปิด Animation ***
-          animation: false,
-          scales: {
-            y: { beginAtZero: true, grid: { color: 'rgba(0, 0, 0, 0.05)' } },
-             x: { grid: { display: false } }
-          },
-             plugins: {
-                 legend: { display: false }
-             },
-             responsive: true,
-             maintainAspectRatio: false
-        }
-      });
-    }
+    // *** ลบฟังก์ชัน renderChart ออกไปทั้งหมด ***
 
     function downloadExcel() {
       const wb = XLSX.utils.book_new();
@@ -216,17 +185,25 @@
     .table-container {
         overflow-x: auto; /* ทำให้ตารางเลื่อนได้แนวนอนบนมือถือ */
         margin-bottom: 30px;
+        /* เพิ่มเงาและพื้นหลังให้กับ container แทน canvas */
+        background: var(--card-background);
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
     }
+    
+    /* ลบ CSS ที่เกี่ยวกับ Canvas ออกไป */
 
     table {
-      min-width: 700px; /* กำหนดความกว้างขั้นต่ำของตารางเพื่อให้มีข้อมูลที่กว้างพอจะเลื่อนได้ */
+      min-width: 700px; 
       width: 100%;
       border-collapse: separate; 
       border-spacing: 0;
       background: var(--card-background);
-      border-radius: 10px;
+      /* ลบ border-radius และ box-shadow ออกจาก table 
+         แล้วไปใส่ที่ .table-container แทน เพื่อให้ตารางเต็ม container */
+      border-radius: 10px; 
       overflow: hidden; 
-      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      box-shadow: none; 
     }
 
     th, td {
@@ -251,16 +228,6 @@
         border-bottom: none;
     }
 
-    canvas {
-      max-width: 100%;
-      height: 160px !important; /* กราฟขนาดเล็กตามต้องการ */
-      margin-bottom: 30px;
-      background: var(--card-background);
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-    }
-    
     pre {
         margin: 0;
         white-space: pre-wrap;
@@ -298,7 +265,6 @@
         h2 { font-size: 1.5rem; }
         h3 { font-size: 1.2rem; }
         
-        /* ลบ min-width ของตารางเพื่อให้ปรับตามขนาดหน้าจอได้ */
         table {
             min-width: unset;
         }
@@ -318,10 +284,9 @@
       <button id="downloadExcelBtn">ดาวน์โหลด Excel</button>
       <button id="downloadPDFBtn">ดาวน์โหลด PDF</button>
     </div>
-    <canvas id="scoreChart" height="160"></canvas>
-    
-    <h3>ตารางสรุปคะแนน (ข้อสอบปรนัย)</h3>
-        <div class="table-container">
+    
+        <h3>ตารางสรุปคะแนน (ข้อสอบปรนัย)</h3>
+    <div class="table-container">
       <table id="quizTable">
         <thead>
                 <tr><th>#</th><th>ชื่อผู้ทำแบบทดสอบ</th><th>อีเมล</th><th>คะแนน</th><th>จำนวนข้อ</th><th>วันที่ทำแบบทดสอบ</th></tr>
@@ -331,7 +296,7 @@
     </div>
 
     <h3>ตารางคำตอบ (ข้อสอบอัตนัย)</h3>
-        <div class="table-container">
+    <div class="table-container">
       <table id="subjectiveTable">
         <thead>
                 <tr><th>#</th><th>ชื่อผู้ทำแบบทดสอบ</th><th>อีเมล</th><th>คำตอบ</th><th>วันที่ทำแบบทดสอบ</th></tr>
