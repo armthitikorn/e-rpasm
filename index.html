@@ -18,7 +18,7 @@
       const email = document.getElementById("emailInput").value.trim();
       const date = document.getElementById("dateInput").value.trim();
 
-      // ดึงข้อมูลทั้งหมด รวมถึงคอลัมน์ 'name' ที่เพิ่มเข้ามา
+      // ดึงข้อมูลทั้งหมด รวมถึงคอลัมน์ 'name'
       const { data: quizResults } = await supabase.from("quiz_results").select("*");
       const { data: subjectiveAnswers } = await supabase.from("subjective_answers").select("*");
 
@@ -35,6 +35,7 @@
       renderChart(filteredQuiz);
     }
 
+    // ฟังก์ชันนี้ถูกปรับปรุงให้ดึงคอลัมน์ 'name' มาแสดง
     function renderTables(quizData, subjectiveData) {
       const quizTable = document.getElementById("quizTableBody");
       const subjectiveTable = document.getElementById("subjectiveTableBody");
@@ -43,14 +44,15 @@
 
       quizData.forEach((r, i) => {
         const row = document.createElement("tr");
-        // **เพิ่ม r.name เข้ามาในตารางปรนัย**
+        // แสดง r.name (สำหรับ quiz_results)
+        // ใช้ r.name || 'N/A' เพื่อจัดการกับแถวข้อมูลเก่าที่อาจยังไม่มีชื่อ
         row.innerHTML = `<td>${i + 1}</td><td>${r.name || 'N/A'}</td><td>${r.user_email}</td><td>${r.score}</td><td>${r.total_questions}</td><td>${r.created_at}</td>`;
         quizTable.appendChild(row);
       });
 
       subjectiveData.forEach((r, i) => {
         const row = document.createElement("tr");
-        // **เพิ่ม r.name เข้ามาในตารางอัตนัย**
+        // แสดง r.name (สำหรับ subjective_answers)
         row.innerHTML = `<td>${i + 1}</td><td>${r.name || 'N/A'}</td><td>${r.user_email}</td><td><pre>${JSON.stringify(r.answers, null, 2)}</pre></td><td>${r.created_at}</td>`;
         subjectiveTable.appendChild(row);
       });
